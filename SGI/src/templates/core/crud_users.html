@@ -1,0 +1,27 @@
+{% extends "_base.html" %}
+{% block content %}
+<h2>Usuarios registrados</h2>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Nombre de usuario</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for usuario in usuarios %}
+    <tr>
+      <td>{{ usuario.id }}</td>
+      <td>{{ usuario.username }}</td>
+      <td>
+        <a href="{{ url_for('accounts.editar_usuario', user_id=usuario.id) }}" class="btn btn-warning btn-sm">Editar</a>
+        <form action="{{ url_for('accounts.eliminar_usuario', user_id=usuario.id) }}" method="post" style="display:inline;">
+          <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Seguro que deseas eliminar este usuario? ');">Eliminar</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

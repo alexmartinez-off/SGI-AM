@@ -1,0 +1,8 @@
+ flask flask-bcrypt 
+ flask-migrate 
+ flask-sqlalchemy 
+ flask-login 
+ python-decouple 
+ pyotp 
+ flask-wtf 
+ qrcode

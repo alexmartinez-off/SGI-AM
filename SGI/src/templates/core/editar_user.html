@@ -1,0 +1,21 @@
+{% extends "_base.html" %}
+{% block content %}
+<h2>Editar usuario</h2>
+<form method="post">
+  {{ form.csrf_token }}
+  <div class="form-group">
+    {{ form.username.label }} {{ form.username(class="form-control") }}
+    {% for error in form.username.errors %}
+      <div class="alert alert-danger">{{ error }}</div>
+    {% endfor %}
+  </div>
+  <div class="form-group">
+    {{ form.password.label }} {{ form.password(class="form-control") }}
+    {% for error in form.password.errors %}
+      <div class="alert alert-danger">{{ error }}</div>
+    {% endfor %}
+  </div>
+  <button type="submit" class="btn btn-primary">Guardar cambios</button>
+  <a href="{{ url_for('accounts.listar_usuarios') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

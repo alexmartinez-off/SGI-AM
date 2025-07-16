@@ -1,0 +1,25 @@
+{% extends "_base.html" %}
+{% block content %}
+<h1 class="text-center">¡Bienvenido {{ current_user.username }}!</h1>
+<h2>Dashboard de Inventario</h2>
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Nombre</th>
+      <th>Cantidad</th>
+      <th>Descripción</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in inventario %}
+    <tr>
+      <td>{{ item.id }}</td>
+      <td>{{ item.nombre }}</td>
+      <td>{{ item.cantidad }}</td>
+      <td>{{ item.descripcion }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

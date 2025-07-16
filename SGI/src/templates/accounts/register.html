@@ -1,0 +1,87 @@
+{% extends "_base.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-4"></div>
+  <div class="col-md-4">
+    <main class="form-signin w-100 m-auto">
+      <form role="form" method="post" action="">
+        {{ form.csrf_token }}
+        <h1 class="h3 mb-3 fw-normal text-center">Registro de usuario</h1>
+
+        <!-- Nombre -->
+        <div class="form-floating">
+          {{ form.nombre(placeholder="Nombre", class="form-control mb-2") }}
+          {{ form.nombre.label }}
+          {% for error in form.nombre.errors %}
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <!-- Apellido -->
+        <div class="form-floating">
+          {{ form.apellido(placeholder="Apellido", class="form-control mb-2") }}
+          {{ form.apellido.label }}
+          {% for error in form.apellido.errors %}
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <!-- Nombre de usuario -->
+        <div class="form-floating">
+          {{ form.username(placeholder="Nombre de usuario", class="form-control mb-2") }}
+          {{ form.username.label }}
+          {% for error in form.username.errors %}
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <!-- Email -->
+        <div class="form-floating">
+          {{ form.email(placeholder="Correo electrónico", class="form-control mb-2",type="email") }}
+          
+
+          {{ form.email.label }}
+          {% for error in form.email.errors %}
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <!-- Teléfono -->
+        <div class="form-floating">
+          {{ form.telefono(placeholder="Teléfono (opcional)", class="form-control mb-2") }}
+          {{ form.telefono.label }}
+          {% for error in form.telefono.errors %}
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <!-- Contraseña -->
+        <div class="form-floating">
+          {{ form.password(placeholder="Contraseña", class="form-control mb-2") }}
+          {{ form.password.label }}
+          {% for error in form.password.errors %}
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <!-- Confirmar contraseña -->
+        <div class="form-floating">
+          {{ form.confirm_password(placeholder="Confirmar contraseña", class="form-control mb-2") }}
+          {{ form.confirm_password.label }}
+          {% for error in form.confirm_password.errors %}
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <!-- Botón -->
+        <button class="w-100 btn btn-lg btn-primary" type="submit">{{ form.submit.label.text }}</button>
+
+        <p class="text-center mt-3">¿Ya tienes cuenta? <a href="{{ url_for('accounts.login') }}">Inicia sesión</a></p>
+      </form>
+    </main>
+  </div>
+  <div class="col-md-4"></div>
+</div>
+
+{% endblock %}

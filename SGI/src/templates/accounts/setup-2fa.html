@@ -1,0 +1,47 @@
+{% extends "_base.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-4"></div>
+  <div class="col-md-4">
+    <main class="form-signin w-100 m-auto">
+      <form role="form">
+        <h5>¡Instrucciones!</h5>
+          <ul>
+            <li>Descarga <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2&hl=es&gl=US" target="_blank">Google Authenticator</a> en tu móvil.</li>
+            <li>Configura un nuevo autenticador.</li>
+            <li>Una vez escaneado el QR, haz clic <a href="{{ url_for('accounts.verify_two_factor_auth') }}">aquí</a>.</li>
+          </ul>
+          <div class="text-center">
+            <img src="data:image/png;base64, {{ qr_image }}" alt="Token secreto" style="width:200px;height:200px"/>
+          </div>
+        <div class="form-group">
+          <label for="secret">Token secreto</label>
+          <input type="text" class="form-control" id="secret" value="{{ secret }}" readonly>
+        </div>
+        <div class="text-center mt-2">
+          <button type="button" class="btn btn-primary" onclick="copySecret()">
+            Copiar token
+          </button>
+        </div>
+        <p class="mt-4 text-center">
+          Una vez escaneado el QR, haz clic <a href="{{ url_for('accounts.verify_two_factor_auth') }}">aquí</a>.
+        </p>
+      </form>
+    </main>
+  </div>
+  <div class="col-md-4"></div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+    function copySecret() {
+    var copyText = document.getElementById("secret");
+    copyText.select();
+    copyText.setSelectionRange(0, 99999); /*Para dispositivos móviles*/
+    document.execCommand("copy");
+    alert("¡Token secreto copiado!");
+  }
+</script>
+{% endblock %}
