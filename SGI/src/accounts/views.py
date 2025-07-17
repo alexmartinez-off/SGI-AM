@@ -4,13 +4,30 @@ from src.accounts.forms import RegisterForm, LoginForm, TwoFactorForm
 from src.accounts.models import User
 from src import db, bcrypt
 from src.utils import get_b64encoded_qr_image
+from functools import wraps
+from flask import session
 
 accounts_bp = Blueprint("accounts", __name__)
 
-HOME_URL = "core.home"
+HOME_URL = "accounts.home"
 SETUP_2FA_URL = "accounts.setup_two_factor_auth"
 VERIFY_2FA_URL = "accounts.verify_two_factor_auth"
 
+# Decorador para requerir autenticación de dos factores
+#REVISAR QUE HAGA ALGO Y FUNCIONE BIEN
+def two_factor_required(func):
+    @wraps(func)
+    def decorated_view(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return redirect(url_for("accounts.login"))
+        if not current_user.is_two_factor_authentication_enabled:
+            flash("Debes configurar la autenticación en dos pasos.", "warning")
+            return redirect(url_for("accounts.setup_two_factor_auth"))
+        if not session.get("otp_verified"):
+            flash("Debes verificar el OTP antes de continuar.", "warning")
+            return redirect(url_for("accounts.verify_two_factor_auth"))
+        return func(*args, **kwargs)
+    return decorated_view
 
 @accounts_bp.route("/register", methods=["GET", "POST"])
 def register():
@@ -48,14 +65,6 @@ def register():
             flash("El registro falló. Por favor intenta de nuevo. ", "danger")
     return render_template("accounts/register.html", form=form)
 
-
-
-
-
-
-
-
-
 @accounts_bp.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
@@ -85,9 +94,9 @@ def login():
 @login_required
 def logout():
     logout_user()
-    flash("Has cerrado sesión correctamente. ", "success")
+    session.pop("otp_verified", None)
+    flash("Has cerrado sesión correctamente.", "success")
     return redirect(url_for("accounts.login"))
-
 
 @accounts_bp.route("/setup-2fa")
 @login_required
@@ -104,31 +113,27 @@ def setup_two_factor_auth():
 @login_required
 def verify_two_factor_auth():
     form = TwoFactorForm(request.form)
-    if form.validate_on_submit():
-        if current_user.is_otp_valid(form.otp.data):
-            if current_user.is_two_factor_authentication_enabled:
-                flash("¡Verificación 2FA exitosa! Has iniciado sesión. " , "success")
-                return redirect(url_for(HOME_URL))
-            else:
-                try:
-                    current_user.is_two_factor_authentication_enabled = True
-                    db.session.commit()
-                    flash("¡Configuración de 2FA exitosa! Has iniciado sesión. ", "success")
-                    return redirect(url_for(HOME_URL))
-                except Exception:
-                    db.session.rollback()
-                    flash("La configuración de 2FA falló. Por favor intenta de nuevo. ", "danger")
-                    return redirect(url_for(VERIFY_2FA_URL))
-        else:
-            flash("OTP inválido. Por favor intenta de nuevo.", "danger")
-            return redirect(url_for(VERIFY_2FA_URL))
-    else:
+    if form.validate_on_submit() and current_user.is_otp_valid(form.otp.data):
+        # Marca que ya pasó el 2FA en esta sesión
+        session["otp_verified"] = True
+
+        # Si es la primera vez, activa el flag en BD
         if not current_user.is_two_factor_authentication_enabled:
-            flash(
-                "No has activado la autenticación en dos pasos. Por favor actívala primero. ",
-                "info",
-            )
-        return render_template("accounts/verify-2fa.html", form=form)
+            current_user.is_two_factor_authentication_enabled = True
+            db.session.commit()
+
+        flash("¡Verificación 2FA exitosa! Has iniciado sesión.", "success")
+        return redirect(url_for(HOME_URL))
+
+    if form.validate_on_submit():
+        flash("OTP inválido. Por favor intenta de nuevo.", "danger")
+        return redirect(url_for(VERIFY_2FA_URL))
+
+    # GET o no validado: muestra el formulario
+    if not current_user.is_two_factor_authentication_enabled:
+        flash("No has activado la autenticación en dos pasos. Por favor actívala primero.", "info")
+    return render_template("accounts/verify-2fa.html", form=form)
+
 
 @accounts_bp.route("/usuarios")
 @login_required
@@ -158,3 +163,11 @@ def eliminar_usuario(user_id):
     db.session.commit()
     flash("Usuario eliminado correctamente. ", "success")
     return redirect(url_for("accounts.crud_users"))
+
+
+@accounts_bp.route("/")
+@login_required
+@two_factor_required
+def home():
+    return render_template("core/index.html")  
+
