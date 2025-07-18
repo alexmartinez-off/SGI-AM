@@ -14,7 +14,6 @@ SETUP_2FA_URL = "accounts.setup_two_factor_auth"
 VERIFY_2FA_URL = "accounts.verify_two_factor_auth"
 
 # Decorador para requerir autenticación de dos factores
-#REVISAR QUE HAGA ALGO Y FUNCIONE BIEN
 def two_factor_required(func):
     @wraps(func)
     def decorated_view(*args, **kwargs):
@@ -117,7 +116,6 @@ def verify_two_factor_auth():
         # Marca que ya pasó el 2FA en esta sesión
         session["otp_verified"] = True
 
-        # Si es la primera vez, activa el flag en BD
         if not current_user.is_two_factor_authentication_enabled:
             current_user.is_two_factor_authentication_enabled = True
             db.session.commit()
@@ -129,7 +127,7 @@ def verify_two_factor_auth():
         flash("OTP inválido. Por favor intenta de nuevo.", "danger")
         return redirect(url_for(VERIFY_2FA_URL))
 
-    # GET o no validado: muestra el formulario
+ 
     if not current_user.is_two_factor_authentication_enabled:
         flash("No has activado la autenticación en dos pasos. Por favor actívala primero.", "info")
     return render_template("accounts/verify-2fa.html", form=form)
