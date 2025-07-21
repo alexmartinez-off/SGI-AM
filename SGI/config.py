@@ -18,6 +18,15 @@ class Config(object):
     DEBUG_TB_ENABLED = False
     DEBUG_TB_INTERCEPT_REDIRECTS = False
     APP_NAME = config("APP_NAME", default="SGI")
+    WTF_I18N_ENABLED = True
+    LANGUAGES = ['es']
+
+    MAIL_SERVER = config("MAIL_SERVER")
+    MAIL_PORT = config("MAIL_PORT", cast=int)
+    MAIL_USE_TLS = config("MAIL_USE_TLS", cast=bool)
+    MAIL_USERNAME = config("MAIL_USERNAME")
+    MAIL_PASSWORD = config("MAIL_PASSWORD")
+    MAIL_DEFAULT_SENDER = config("MAIL_DEFAULT_SENDER")
 
 
 class DevelopmentConfig(Config):
