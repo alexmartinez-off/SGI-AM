@@ -92,4 +92,4 @@ class ResetPasswordForm(FlaskForm):
             EqualTo('password', message="Las contraseñas deben coincidir.")
         ]
     )  # Confirmación de nueva contraseña
-    submit = SubmitField('Restablecer contraseña')  #
+    submit = SubmitField('Restablecer contraseña')
