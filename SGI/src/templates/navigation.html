@@ -1,7 +1,4 @@
-
-
-<!-- Navegación adaptada para Flask -->
-<nav class="navbar navbar-expand-lg bg-dark px-3" data-bs-theme="dark">
+<nav class="navbar navbar-expand-lg bg-custom-dark px-3" data-bs-theme="dark">
   <div class="container-fluid">
     <!-- Nombre del sistema -->
     <a class="navbar-brand" href="{{ url_for('core.home') }}">Sistema de Gestión de Inventario</a>
@@ -11,41 +8,37 @@
       <span class="navbar-toggler-icon"></span>
     </button>
 
-    <div class="collapse navbar-collapse justify-content-between" id="navbarMain">
-      <!-- Izquierda: modo nocturno + búsqueda -->
-      <div class="d-flex align-items-center">
-        <!-- Interruptor modo nocturno -->
-        <label class="form-check form-switch mb-0 me-3">
+    <div class="collapse navbar-collapse" id="navbarMain">
+      <div class="d-flex align-items-center ms-auto gap-3">
+        <!-- Modo nocturno -->
+        <label class="form-check form-switch mb-0">
           <input class="form-check-input" type="checkbox" id="darkModeSwitch">
-          <span class="form-check-label">Modo nocturno</span>
+          <span class="form-check-label text-muted">Modo nocturno</span>
         </label>
 
-        <!-- Formulario de búsqueda -->
-        <form class="d-flex" role="search">
-          <input class="form-control me-2" type="search" placeholder="Buscar" aria-label="Buscar">
-          <button class="btn btn-outline-light" type="submit">Buscar</button>
-        </form>
-      </div>
-
-      <!-- Derecha: módulo de usuario -->
-      <ul class="navbar-nav align-items-center">
         {% if current_user.is_authenticated %}
-        <li class="nav-item dropdown">
-          <!-- Icono de perfil (comentado para futuro uso) -->
-          
-          <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <img src="{{ url_for('static', filename='img/iconDanM.jpg') }}" alt="Perfil" width="32" height="32" class="rounded-circle me-2">
-            {{ current_user.username }}
-          </a> <!-- termonar de configirar img luego  -->
+          <!-- Formulario de búsqueda -->
+          <form class="d-flex" role="search">
+            <input class="form-control me-2" type="search" placeholder="Buscar" aria-label="Buscar">
+          </form>
 
-          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-            <li><a class="dropdown-item" href="{#{ url_for('accounts.profile') }#}">Perfil</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="{{ url_for('accounts.logout') }}">Cerrar sesión</a></li>
-          </ul>
-        </li>
+          <!-- Botón buscar -->
+          <button class="btn btn-outline-light" type="submit" form="searchForm">Buscar</button>
+
+          <!-- Usuario -->
+          <li class="nav-item dropdown list-unstyled">
+            <a class="nav-link dropdown-toggle d-flex align-items-center text-muted" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <img src="{{ url_for('static', filename='img/iconDanM.jpg') }}" alt="Perfil" width="32" height="32" class="rounded-circle me-2">
+              {{ current_user.username }}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+              <li><a class="dropdown-item" href="#">Perfil</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{{ url_for('accounts.logout') }}">Cerrar sesión</a></li>
+            </ul>
+          </li>
         {% endif %}
-      </ul>
+      </div>
     </div>
   </div>
 </nav>
