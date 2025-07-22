@@ -1,8 +1,17 @@
- flask flask-bcrypt 
- flask-migrate 
- flask-sqlalchemy 
- flask-login 
- python-decouple 
- pyotp 
- flask-wtf 
- qrcode
+flask
+flask-bcrypt
+flask-migrate
+flask-sqlalchemy
+flask-login
+flask-mail
+flask-wtf
+flask-cors
+python-decouple
+python-dotenv
+pyotp
+email-validator
+psycopg2-binary
+gunicorn
+requests
+pymysql
+qrcode

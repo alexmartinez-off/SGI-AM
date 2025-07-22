@@ -5,8 +5,7 @@ from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 import pymysql
-
-# Importa tus clases de configuración
+from flask_mail import Mail
 from config import DevelopmentConfig, ProductionConfig, TestingConfig
 
 # Carga segura según entorno
@@ -32,6 +31,7 @@ pymysql.install_as_MySQLdb()
 bcrypt = Bcrypt(app)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+mail = Mail(app)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
