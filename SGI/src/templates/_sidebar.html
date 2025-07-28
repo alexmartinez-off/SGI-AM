@@ -1,0 +1,41 @@
+<div id="sidebar" class="d-flex flex-column p-3">
+    <!-- Nombre del Sistema -->
+    <a href="{{ url_for('core.home') }}" class="navbar-brand text-center text-light w-100 p-3 border-bottom">
+        <h4>SGI-AM</h4>
+    </a>
+
+    <!-- Menú de Navegación del Sidebar -->
+    <ul class="nav nav-pills flex-column mb-auto mt-3 ">
+        <li class="nav-item mb-1">
+            <a href="{{ url_for('core.home') }}" class="nav-link text-white">
+                <i class="fa fa-tachometer-alt me-2"></i>Dashboard
+            </a>
+        </li>
+        {% if current_user.is_authenticated and current_user.is_admin() %}
+        <li class="nav-item mb-1">
+            <a href="{{ url_for('accounts.listar_usuarios') }}" class="nav-link text-white">
+                <i class="fa fa-users me-2"></i>Gestión de Usuarios
+            </a>
+        </li>
+        <li class="nav-item mb-1">
+            <a href="{{ url_for('accounts.ver_logs') }}" class="nav-link text-white">
+                <i class="fa fa-history me-2"></i>Logs de Acciones
+            </a>
+        </li>
+        {% endif %}
+        <li class="nav-item mb-1">
+            <a href="#" class="nav-link text-white">
+                <i class="fa fa-box-open me-2"></i>Inventario
+            </a>
+        </li>
+        <li class="nav-item mb-1">
+            <a href="#" class="nav-link text-white">
+                <i class="fa fa-chart-line me-2"></i>Reportes
+            </a>
+        </li>
+    </ul>
+    <hr>
+    <div class="text-center text-muted small">
+        &copy; 2025 SGI-AM
+    </div>
+</div>
