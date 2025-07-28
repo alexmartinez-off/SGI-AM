@@ -1,0 +1,210 @@
+{% extends "_dashboard_base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2>
+    <i class="fa fa-history me-2"></i>Logs de Acciones
+  </h2>
+  <a href="{{ url_for('accounts.listar_usuarios') }}" class="btn btn-secondary">
+    <i class="fa fa-arrow-left me-2"></i>Volver a Usuarios
+  </a>
+</div>
+
+<!-- Filtros de logs -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="card-title mb-0">
+      <i class="fa fa-filter me-2"></i>Filtros
+    </h5>
+  </div>
+  <div class="card-body">
+    <form method="get" action="">
+      <div class="row">
+        <div class="col-md-2">
+          <label class="form-label">Acción</label>
+          <select name="accion" class="form-select">
+            <option value="">Todas las acciones</option>
+            {% for accion in acciones_disponibles %}
+            <option value="{{ accion }}" {% if filtros.accion == accion %}selected{% endif %}>
+              {{ accion.title() }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Usuario</label>
+          <input type="text" name="usuario" class="form-control" 
+                 placeholder="Buscar por usuario..." 
+                 value="{{ filtros.usuario }}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Desde</label>
+          <input type="date" name="fecha_desde" class="form-control" 
+                 value="{{ filtros.fecha_desde }}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Hasta</label>
+          <input type="date" name="fecha_hasta" class="form-control" 
+                 value="{{ filtros.fecha_hasta }}">
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary me-2">
+            <i class="fa fa-search me-1"></i>Filtrar
+          </button>
+          <a href="{{ url_for('accounts.ver_logs') }}" class="btn btn-secondary">
+            <i class="fa fa-times me-1"></i>Limpiar
+          </a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Tabla de logs -->
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm">
+        <thead class="table-dark">
+          <tr>
+            <th width="5%">ID</th>
+            <th width="15%">Fecha/Hora</th>
+            <th width="12%">Usuario</th>
+            <th width="10%">Acción</th>
+            <th width="12%">Módulo</th>
+            <th width="25%">Descripción</th>
+            <th width="10%">IP</th>
+            <th width="11%">Detalles</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+          <tr>
+            <td>{{ log.id }}</td>
+            <td>
+              <small>
+                {{ log.fecha_hora.strftime('%d/%m/%Y') }}<br>
+                {{ log.fecha_hora.strftime('%H:%M:%S') }}
+              </small>
+            </td>
+            <td>
+              <span class="badge bg-{{ 'danger' if log.usuario.rol == 'admin' else 'secondary' }}">
+                {{ log.usuario.username }}
+              </span>
+            </td>
+            <td>
+              {% if log.accion == 'crear' %}
+                <span class="badge bg-success">{{ log.accion.title() }}</span>
+              {% elif log.accion == 'editar' %}
+                <span class="badge bg-warning">{{ log.accion.title() }}</span>
+              {% elif log.accion == 'eliminar' %}
+                <span class="badge bg-danger">{{ log.accion.title() }}</span>
+              {% elif log.accion == 'consultar' %}
+                <span class="badge bg-info">{{ log.accion.title() }}</span>
+              {% else %}
+                <span class="badge bg-secondary">{{ log.accion.title() }}</span>
+              {% endif %}
+            </td>
+            <td>
+              <small class="text-muted">{{ log.tabla_afectada }}</small>
+              {% if log.registro_id %}
+                <br><small>ID: {{ log.registro_id }}</small>
+              {% endif %}
+            </td>
+            <td>
+              <small>{{ log.descripcion or 'Sin descripción' }}</small>
+            </td>
+            <td>
+              <small class="text-muted">{{ log.ip_address or 'N/A' }}</small>
+            </td>
+            <td>
+              {% if log.datos_anteriores or log.datos_nuevos %}
+              <button class="btn btn-outline-info btn-sm" 
+                      data-bs-toggle="modal" 
+                      data-bs-target="#modalDetalles{{ log.id }}"
+                      title="Ver detalles">
+                <i class="fa fa-eye"></i>
+              </button>
+              {% else %}
+              <span class="text-muted">-</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" class="text-center text-muted">
+              No se encontraron logs que coincidan con los filtros aplicados.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    
+    {% if logs %}
+    <div class="mt-3 text-muted">
+      <small>
+        Mostrando los últimos {{ logs|length }} registros.
+        {% if logs|length == 500 %}
+          <strong>Nota:</strong> Se muestran máximo 500 registros. Use filtros para refinar la búsqueda.
+        {% endif %}
+      </small>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Modales para mostrar detalles de los logs -->
+{% for log in logs %}
+{% if log.datos_anteriores or log.datos_nuevos %}
+<div class="modal fade" id="modalDetalles{{ log.id }}" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          Detalles del Log #{{ log.id }} - {{ log.accion.title() }}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-6">
+            <h6>Información General</h6>
+            <ul class="list-unstyled">
+              <li><strong>Usuario:</strong> {{ log.usuario.username }}</li>
+              <li><strong>Fecha:</strong> {{ log.fecha_hora.strftime('%d/%m/%Y %H:%M:%S') }}</li>
+              <li><strong>IP:</strong> {{ log.ip_address or 'N/A' }}</li>
+              <li><strong>Navegador:</strong> 
+                <small>{{ (log.user_agent[:50] + '...') if log.user_agent and log.user_agent|length > 50 else (log.user_agent or 'N/A') }}</small>
+              </li>
+            </ul>
+          </div>
+          <div class="col-md-6">
+            <h6>Descripción</h6>
+            <p>{{ log.descripcion or 'Sin descripción' }}</p>
+          </div>
+        </div>
+        
+        {% if log.datos_anteriores %}
+        <div class="mt-3">
+          <h6>Datos Anteriores</h6>
+          <pre class="p-2 rounded"><code>{{ log.datos_anteriores }}</code></pre>
+        </div>
+        {% endif %}
+        
+        {% if log.datos_nuevos %}
+        <div class="mt-3">
+          <h6>Datos Nuevos</h6>
+          <pre class="p-2 rounded"><code>{{ log.datos_nuevos }}</code></pre>
+        </div>
+        {% endif %}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{% endblock %}
