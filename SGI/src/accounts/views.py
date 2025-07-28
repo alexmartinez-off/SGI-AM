@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import current_user, login_user, logout_user, login_required
-from src.accounts.forms import RegisterForm, LoginForm, TwoFactorForm, ForgotPasswordForm, ResetPasswordForm
+from src.accounts.forms import RegisterForm, LoginForm, TwoFactorForm, ForgotPasswordForm, ResetPasswordForm, EditUserForm, FiltroUsuariosForm, UpdateProfileForm
 from src.accounts.models import User
+from src.accounts.models_logs import LogAccion
 from src import db, bcrypt
 from src.utils import get_b64encoded_qr_image
 from functools import wraps
@@ -35,6 +36,19 @@ def two_factor_required(func):
         return func(*args, **kwargs)
     return decorated_view
 
+# Decorador para requerir permisos de administrador
+def admin_required(func):
+    """
+    Decorador que verifica si el usuario tiene permisos de administrador.
+    """
+    @wraps(func)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.is_admin():
+            flash("No tienes permisos para acceder a esta página.", "danger")
+            return redirect(url_for(HOME_URL))
+        return func(*args, **kwargs)
+    return decorated_function
+
 # Ruta para registrar un nuevo usuario
 @accounts_bp.route("/register", methods=["GET", "POST"])
 def register():
@@ -61,7 +75,8 @@ def register():
                 username=form.username.data,
                 email=form.email.data,
                 telefono=form.telefono.data,
-                password=form.password.data
+                password=form.password.data,
+                rol=form.rol.data
             )
             db.session.add(user)
             db.session.commit()
@@ -159,46 +174,285 @@ def verify_two_factor_auth():
         flash("No has activado la autenticación en dos pasos. Por favor actívala primero.", "info")
     return render_template("accounts/verify-2fa.html", form=form)
 
-# Ruta para listar usuarios (CRUD)
-@accounts_bp.route("/usuarios")
+# Ruta para listar usuarios (CRUD) - Solo administradores
+@accounts_bp.route("/usuarios", methods=["GET", "POST"])
 @login_required
+@admin_required
 def listar_usuarios():
     """
-    Muestra la lista de usuarios registrados.
+    Muestra la lista de usuarios registrados con filtros de búsqueda. Solo accesible para administradores.
     """
-    usuarios = User.query.all()
-    return render_template("accounts/crud_users.html", usuarios=usuarios)
+    from sqlalchemy import or_, and_
+    from datetime import datetime
+    
+    form = FiltroUsuariosForm()
+    
+    # Construir consulta base
+    query = User.query
+    
+    # Aplicar filtros si el formulario fue enviado
+    if form.validate_on_submit():
+        # Filtro de búsqueda por texto
+        if form.buscar.data:
+            search_term = f"%{form.buscar.data}%"
+            query = query.filter(
+                or_(
+                    User.nombre.ilike(search_term),
+                    User.apellido.ilike(search_term),
+                    User.username.ilike(search_term),
+                    User.email.ilike(search_term)
+                )
+            )
+        
+        # Filtro por rol
+        if form.rol.data:
+            query = query.filter(User.rol == form.rol.data)
+        
+        # Filtro por estado 2FA
+        if form.estado_2fa.data:
+            if form.estado_2fa.data == 'activo':
+                query = query.filter(User.is_two_factor_authentication_enabled == True)
+            elif form.estado_2fa.data == 'inactivo':
+                query = query.filter(User.is_two_factor_authentication_enabled == False)
+        
+        # Filtro por fecha de registro
+        if form.fecha_desde.data:
+            query = query.filter(User.created_at >= form.fecha_desde.data)
+        
+        if form.fecha_hasta.data:
+            # Agregar 23:59:59 al día seleccionado
+            fecha_hasta = datetime.combine(form.fecha_hasta.data, datetime.max.time())
+            query = query.filter(User.created_at <= fecha_hasta)
+    
+    # Obtener usuarios ordenados por fecha de creación (más recientes primero)
+    usuarios = query.order_by(User.created_at.desc()).all()
+    
+    # Registrar acceso al módulo de gestión de usuarios
+    LogAccion.registrar_accion(
+        usuario_id=current_user.id,
+        accion='consultar',
+        tabla_afectada='users',
+        descripcion=f'Consultó la lista de usuarios (total: {len(usuarios)})'
+    )
+    
+    return render_template("accounts/crud_users.html", usuarios=usuarios, form=form)
 
-# Ruta para editar un usuario
+# Ruta para crear un nuevo usuario desde el panel de administración
+@accounts_bp.route("/usuarios/crear", methods=["GET", "POST"])
+@login_required
+@admin_required
+def crear_usuario():
+    """
+    Permite a un administrador crear un nuevo usuario.
+    """
+    form = RegisterForm()
+    if form.validate_on_submit():
+        try:
+            user = User(
+                nombre=form.nombre.data,
+                apellido=form.apellido.data,
+                username=form.username.data,
+                email=form.email.data,
+                telefono=form.telefono.data,
+                password=form.password.data,
+                rol=form.rol.data
+            )
+            db.session.add(user)
+            db.session.commit()
+            
+            # Registrar la acción de creación
+            LogAccion.registrar_accion(
+                usuario_id=current_user.id,
+                accion='crear',
+                tabla_afectada='users',
+                registro_id=user.id,
+                datos_nuevos={
+                    'nombre': user.nombre,
+                    'apellido': user.apellido,
+                    'username': user.username,
+                    'email': user.email,
+                    'rol': user.rol
+                },
+                descripcion=f'Creó el usuario {user.username} ({user.nombre} {user.apellido})'
+            )
+            
+            flash("Usuario creado exitosamente.", "success")
+            return redirect(url_for("accounts.listar_usuarios"))
+        except Exception as e:
+            db.session.rollback()
+            flash("Error al crear el usuario. Inténtalo de nuevo.", "danger")
+    return render_template("accounts/crear_usuario.html", form=form)
+
+# Ruta para editar un usuario - Solo administradores
 @accounts_bp.route("/usuarios/editar/<int:user_id>", methods=["GET", "POST"])
 @login_required
+@admin_required
 def editar_usuario(user_id):
     """
-    Permite editar los datos de un usuario.
+    Permite editar los datos de un usuario. Solo accesible para administradores.
     """
     usuario = User.query.get_or_404(user_id)
-    form = RegisterForm(obj=usuario)
-    if form.validate_on_submit():
+    form = EditUserForm(original_user_id=user_id, obj=usuario)
+    
+    if request.method == 'POST' and form.validate():
+        # Guardar datos anteriores para el log
+        datos_anteriores = {
+            'nombre': usuario.nombre,
+            'apellido': usuario.apellido,
+            'username': usuario.username,
+            'email': usuario.email,
+            'telefono': usuario.telefono,
+            'rol': usuario.rol
+        }
+        
+        # Actualizar datos
+        usuario.nombre = form.nombre.data
+        usuario.apellido = form.apellido.data
         usuario.username = form.username.data
-        if form.password.data:
-            usuario.password = bcrypt.generate_password_hash(form.password.data)
+        usuario.email = form.email.data
+        usuario.telefono = form.telefono.data
+        usuario.rol = form.rol.data
+        
+        # Solo actualizar contraseña si se proporcionó una nueva
+        if form.password.data and form.password.data.strip():
+            usuario.password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        
         db.session.commit()
-        flash("Usuario actualizado correctamente. ", "success")
-        return redirect(url_for("accounts.crud_users"))
-    return render_template("accounts/editar_user.html", form=form, usuario=usuario)
+        
+        # Datos nuevos para el log
+        datos_nuevos = {
+            'nombre': usuario.nombre,
+            'apellido': usuario.apellido,
+            'username': usuario.username,
+            'email': usuario.email,
+            'telefono': usuario.telefono,
+            'rol': usuario.rol
+        }
+        
+        # Registrar la acción de edición
+        LogAccion.registrar_accion(
+            usuario_id=current_user.id,
+            accion='editar',
+            tabla_afectada='users',
+            registro_id=usuario.id,
+            datos_anteriores=datos_anteriores,
+            datos_nuevos=datos_nuevos,
+            descripcion=f'Editó el usuario {usuario.username} ({usuario.nombre} {usuario.apellido})'
+        )
+        
+        flash("Usuario actualizado correctamente.", "success")
+        return redirect(url_for("accounts.listar_usuarios"))
+    
+    return render_template("accounts/editar_usuario.html", form=form, usuario=usuario)
 
-# Ruta para eliminar un usuario
+# Ruta para eliminar un usuario - Solo administradores
 @accounts_bp.route("/usuarios/eliminar/<int:user_id>", methods=["POST"])
 @login_required
+@admin_required
 def eliminar_usuario(user_id):
     """
-    Elimina un usuario de la base de datos.
+    Elimina un usuario de la base de datos. Solo accesible para administradores.
     """
     usuario = User.query.get_or_404(user_id)
+    # Prevenir que un administrador se elimine a sí mismo
+    if usuario.id == current_user.id:
+        flash("No puedes eliminar tu propia cuenta.", "warning")
+        return redirect(url_for("accounts.listar_usuarios"))
+    
+    # Guardar datos del usuario para el log antes de eliminarlo
+    datos_eliminados = {
+        'nombre': usuario.nombre,
+        'apellido': usuario.apellido,
+        'username': usuario.username,
+        'email': usuario.email,
+        'telefono': usuario.telefono,
+        'rol': usuario.rol,
+        'fecha_creacion': usuario.created_at.isoformat() if usuario.created_at else None
+    }
+    
+    usuario_eliminado_info = f"{usuario.username} ({usuario.nombre} {usuario.apellido})"
+    
     db.session.delete(usuario)
     db.session.commit()
-    flash("Usuario eliminado correctamente. ", "success")
-    return redirect(url_for("accounts.crud_users"))
+    
+    # Registrar la acción de eliminación
+    LogAccion.registrar_accion(
+        usuario_id=current_user.id,
+        accion='eliminar',
+        tabla_afectada='users',
+        registro_id=user_id,
+        datos_anteriores=datos_eliminados,
+        descripcion=f'Eliminó el usuario {usuario_eliminado_info}'
+    )
+    
+    flash("Usuario eliminado correctamente.", "success")
+    return redirect(url_for("accounts.listar_usuarios"))
+
+# Ruta para ver los logs de acciones - Solo administradores
+@accounts_bp.route("/logs", methods=["GET"])
+@login_required
+@admin_required
+def ver_logs():
+    """
+    Muestra el historial de acciones administrativas.
+    """
+    # Obtener parámetros de filtrado
+    accion_filtro = request.args.get('accion', '')
+    usuario_filtro = request.args.get('usuario', '')
+    fecha_desde = request.args.get('fecha_desde', '')
+    fecha_hasta = request.args.get('fecha_hasta', '')
+    
+    # Construir consulta
+    query = LogAccion.query
+    
+    if accion_filtro:
+        query = query.filter(LogAccion.accion == accion_filtro)
+    
+    if usuario_filtro:
+        query = query.join(User).filter(User.username.ilike(f'%{usuario_filtro}%'))
+    
+    if fecha_desde:
+        try:
+            from datetime import datetime
+            fecha = datetime.strptime(fecha_desde, '%Y-%m-%d')
+            query = query.filter(LogAccion.fecha_hora >= fecha)
+        except ValueError:
+            pass
+    
+    if fecha_hasta:
+        try:
+            from datetime import datetime
+            fecha = datetime.strptime(fecha_hasta, '%Y-%m-%d')
+            # Incluir todo el día
+            fecha_fin = fecha.replace(hour=23, minute=59, second=59)
+            query = query.filter(LogAccion.fecha_hora <= fecha_fin)
+        except ValueError:
+            pass
+    
+    # Obtener logs ordenados por fecha (más recientes primero)
+    logs = query.order_by(LogAccion.fecha_hora.desc()).limit(500).all()
+    
+    # Obtener listas para filtros
+    acciones_disponibles = db.session.query(LogAccion.accion).distinct().all()
+    acciones_disponibles = [accion[0] for accion in acciones_disponibles]
+    
+    # Registrar que se consultaron los logs
+    LogAccion.registrar_accion(
+        usuario_id=current_user.id,
+        accion='consultar',
+        tabla_afectada='logs_acciones',
+        descripcion='Consultó el historial de logs de acciones'
+    )
+    
+    return render_template("accounts/logs_acciones.html", 
+                         logs=logs, 
+                         acciones_disponibles=acciones_disponibles,
+                         filtros={
+                             'accion': accion_filtro,
+                             'usuario': usuario_filtro,
+                             'fecha_desde': fecha_desde,
+                             'fecha_hasta': fecha_hasta
+                         })
 
 # Ruta principal (home) protegida por login y 2FA
 @accounts_bp.route("/")
@@ -263,4 +517,30 @@ def reset_password(token):
         flash('Tu contraseña ha sido actualizada. Ya puedes iniciar sesión.', 'success')
         return redirect(url_for('accounts.login'))
     return render_template('accounts/reset_password.html', form=form)
+
+# Ruta para "Mi Perfil"
+@accounts_bp.route("/profile", methods=['GET', 'POST'])
+@login_required
+def profile():
+    """
+    Permite al usuario ver y editar su propio perfil.
+    """
+    form = UpdateProfileForm()
+    if form.validate_on_submit():
+        current_user.nombre = form.nombre.data
+        current_user.apellido = form.apellido.data
+        current_user.username = form.username.data
+        current_user.email = form.email.data
+        current_user.telefono = form.telefono.data
+        db.session.commit()
+        flash('Tu perfil ha sido actualizado.', 'success')
+        return redirect(url_for('accounts.profile'))
+    elif request.method == 'GET':
+        form.nombre.data = current_user.nombre
+        form.apellido.data = current_user.apellido
+        form.username.data = current_user.username
+        form.email.data = current_user.email
+        form.telefono.data = current_user.telefono
+    return render_template('accounts/profile.html', title='Mi Perfil', form=form)
+
 
