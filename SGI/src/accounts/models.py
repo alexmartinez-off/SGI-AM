@@ -6,6 +6,9 @@ from config import Config
 from itsdangerous import URLSafeTimedSerializer
 from flask import current_app
 
+# Importar el modelo de logs
+from .models_logs import LogAccion
+
 # Modelo de usuario para la autenticación y gestión de cuentas
 class User(UserMixin, db.Model):
     __tablename__ = "users"  # Nombre de la tabla en la base de datos
@@ -21,8 +24,9 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)  # Fecha de creación
     is_two_factor_authentication_enabled = db.Column(db.Boolean, default=False)  # ¿Tiene 2FA activado?
     secret_token = db.Column(db.String(255), unique=True)  # Token secreto para 2FA
+    rol = db.Column(db.String(50), default='usuario')  # Rol del usuario (admin, usuario)
 
-    def __init__(self, nombre, apellido, username, email, telefono, password):
+    def __init__(self, nombre, apellido, username, email, telefono, password, rol='usuario'):
         # Constructor: inicializa los campos y genera el hash de la contraseña y el token secreto 2FA
         self.nombre = nombre
         self.apellido = apellido
@@ -31,6 +35,7 @@ class User(UserMixin, db.Model):
         self.telefono = telefono
         self.password = bcrypt.generate_password_hash(password).decode('utf-8')
         self.secret_token = pyotp.random_base32()
+        self.rol = rol
 
     def get_authentication_setup_uri(self):
         """
@@ -65,6 +70,12 @@ class User(UserMixin, db.Model):
         except Exception:
             return None
         return User.query.get(user_id)
+
+    def is_admin(self):
+        """
+        Verifica si el usuario tiene rol de administrador.
+        """
+        return self.rol == 'admin'
 
     def __repr__(self):
         # Representación legible del usuario (útil para debugging)
