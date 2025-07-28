@@ -1,0 +1,156 @@
+{% extends "_dashboard_base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h4 class="card-title mb-0">
+          <i class="fa fa-user-edit me-2"></i>Editar Usuario: {{ usuario.username }}
+        </h4>
+      </div>
+      <div class="card-body">
+        <form method="post" action="">
+          {{ form.csrf_token }}
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                {{ form.nombre.label(class="form-label") }}
+                {{ form.nombre(class="form-control", placeholder="Nombre") }}
+                {% for error in form.nombre.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                {{ form.apellido.label(class="form-label") }}
+                {{ form.apellido(class="form-control", placeholder="Apellido") }}
+                {% for error in form.apellido.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            {{ form.username.label(class="form-label") }}
+            {{ form.username(class="form-control", placeholder="Nombre de usuario") }}
+            {% for error in form.username.errors %}
+              <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-3">
+            {{ form.email.label(class="form-label") }}
+            {{ form.email(class="form-control", placeholder="Correo electrónico", type="email") }}
+            {% for error in form.email.errors %}
+              <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-3">
+            {{ form.telefono.label(class="form-label") }}
+            {{ form.telefono(class="form-control", placeholder="Teléfono (opcional)") }}
+            {% for error in form.telefono.errors %}
+              <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-3">
+            {{ form.rol.label(class="form-label") }}
+            {{ form.rol(class="form-select") }}
+            {% for error in form.rol.errors %}
+              <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                {{ form.password.label(class="form-label mb-1") }}
+                <small class="text-muted d-block">(Dejar en blanco para mantener la actual)</small>
+                {{ form.password(class="form-control mt-2", placeholder="Nueva contraseña (opcional)", id="password") }}
+                {% if form.password.errors %}
+                  {% for error in form.password.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                {% endif %}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                {{ form.confirm_password.label(class="form-label mb-1") }}
+                <small class="text-muted d-block">(Solo si cambias la contraseña)</small>
+                {{ form.confirm_password(class="form-control mt-2", placeholder="Confirmar contraseña", id="confirm_password") }} 
+                {% if form.confirm_password.errors %}
+                  {% for error in form.confirm_password.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <a href="{{ url_for('accounts.listar_usuarios') }}" class="btn btn-secondary me-md-2">
+              <i class="fa fa-times me-2"></i>Cancelar
+            </a>
+            <button type="submit" class="btn btn-primary">
+              <i class="fa fa-save me-2"></i>Guardar Cambios
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const passwordField = document.getElementById('password');
+    const confirmPasswordField = document.getElementById('confirm_password');
+    
+    if (passwordField && confirmPasswordField) {
+        // Función para limpiar errores
+        function clearPasswordErrors() {
+            const passwordErrors = passwordField.parentElement.querySelectorAll('.text-danger');
+            const confirmErrors = confirmPasswordField.parentElement.querySelectorAll('.text-danger');
+            
+            passwordErrors.forEach(error => error.remove());
+            confirmErrors.forEach(error => error.remove());
+        }
+        
+        // Función para actualizar el estado del campo de confirmación
+        function updateConfirmPasswordState() {
+            if (passwordField.value.trim() === '') {
+                confirmPasswordField.disabled = true;
+                confirmPasswordField.value = '';
+                confirmPasswordField.placeholder = 'Ingresa una contraseña primero';
+                confirmPasswordField.parentElement.querySelector('small').textContent = '(Ingresa una contraseña primero)';
+                
+                // Limpiar errores cuando el campo está vacío
+                clearPasswordErrors();
+            } else {
+                confirmPasswordField.disabled = false;
+                confirmPasswordField.placeholder = 'Confirmar contraseña';
+                confirmPasswordField.parentElement.querySelector('small').textContent = '(Confirma la nueva contraseña)';
+            }
+        }
+        
+        // Ejecutar al cargar la página
+        updateConfirmPasswordState();
+        
+        // Ejecutar cuando cambie el campo de contraseña
+        passwordField.addEventListener('input', updateConfirmPasswordState);
+        
+        // Limpiar errores al escribir
+        passwordField.addEventListener('input', function() {
+            if (this.value.trim() === '') {
+                clearPasswordErrors();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
