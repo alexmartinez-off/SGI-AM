@@ -1,21 +1,103 @@
-{% extends "_base.html" %}
+{% extends "_dashboard_base.html" %}
 {% block content %}
-<h2>Editar usuario</h2>
-<form method="post">
-  {{ form.csrf_token }}
-  <div class="form-group">
-    {{ form.username.label }} {{ form.username(class="form-control") }}
-    {% for error in form.username.errors %}
-      <div class="alert alert-danger">{{ error }}</div>
-    {% endfor %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h4 class="card-title mb-0">
+          <i class="fa fa-user-edit me-2"></i>Editar Usuario: {{ usuario.username }}
+        </h4>
+      </div>
+      <div class="card-body">
+        <form method="post" action="">
+          {{ form.csrf_token }}
+          
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                {{ form.nombre.label(class="form-label") }}
+                {{ form.nombre(class="form-control", placeholder="Nombre") }}
+                {% for error in form.nombre.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                {{ form.apellido.label(class="form-label") }}
+                {{ form.apellido(class="form-control", placeholder="Apellido") }}
+                {% for error in form.apellido.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            {{ form.username.label(class="form-label") }}
+            {{ form.username(class="form-control", placeholder="Nombre de usuario") }}
+            {% for error in form.username.errors %}
+              <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-3">
+            {{ form.email.label(class="form-label") }}
+            {{ form.email(class="form-control", placeholder="Correo electrónico", type="email") }}
+            {% for error in form.email.errors %}
+              <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-3">
+            {{ form.telefono.label(class="form-label") }}
+            {{ form.telefono(class="form-control", placeholder="Teléfono (opcional)") }}
+            {% for error in form.telefono.errors %}
+              <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-3">
+            {{ form.rol.label(class="form-label") }}
+            {{ form.rol(class="form-select") }}
+            {% for error in form.rol.errors %}
+              <div class="text-danger small">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                {{ form.password.label(class="form-label") }}
+                <small class="text-muted">(Dejar en blanco para mantener la actual)</small>
+                {{ form.password(class="form-control", placeholder="Nueva contraseña (opcional)") }}
+                {% for error in form.password.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                {{ form.confirm_password.label(class="form-label") }}
+                {{ form.confirm_password(class="form-control", placeholder="Confirmar contraseña") }}
+                {% for error in form.confirm_password.errors %}
+                  <div class="text-danger small">{{ error }}</div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <a href="{{ url_for('accounts.listar_usuarios') }}" class="btn btn-secondary me-md-2">
+              <i class="fa fa-times me-2"></i>Cancelar
+            </a>
+            <button type="submit" class="btn btn-primary">
+              <i class="fa fa-save me-2"></i>Guardar Cambios
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
-  <div class="form-group">
-    {{ form.password.label }} {{ form.password(class="form-control") }}
-    {% for error in form.password.errors %}
-      <div class="alert alert-danger">{{ error }}</div>
-    {% endfor %}
-  </div>
-  <button type="submit" class="btn btn-primary">Guardar cambios</button>
-  <a href="{{ url_for('accounts.listar_usuarios') }}" class="btn btn-secondary">Cancelar</a>
-</form>
+</div>
 {% endblock %}
