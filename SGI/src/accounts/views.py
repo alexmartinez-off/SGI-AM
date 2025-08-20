@@ -462,7 +462,9 @@ def home():
     """
     Página principal del sistema, solo accesible si el usuario está autenticado y pasó el 2FA.
     """
-    return render_template("core/index.html")
+    # Importar la función index del core para reutilizar la lógica
+    from src.core.views import index
+    return index()
 
 # Función para enviar correo de recuperación de contraseña
 def send_reset_email(user):
