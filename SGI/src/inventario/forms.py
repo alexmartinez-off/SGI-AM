@@ -1,66 +1,30 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, TextAreaField, SelectField, IntegerField, DecimalField, DateTimeField, SubmitField
+from wtforms import StringField, TextAreaField, SelectField, IntegerField, DecimalField, DateTimeField, DateField, SubmitField
 from wtforms.validators import DataRequired, Length, Optional, NumberRange
 from wtforms.widgets import TextArea
 from src.inventario.models import Categoria
+from src import db
 
 class ProductoForm(FlaskForm):
     """Formulario para crear/editar productos"""
-    nombre = StringField('Nombre del Producto', validators=[
-        DataRequired(message="El nombre es obligatorio"),
-        Length(min=3, max=255, message="El nombre debe tener entre 3 y 255 caracteres")
-    ])
-    
-    descripcion = TextAreaField('Descripción', validators=[
-        DataRequired(message="La descripción es obligatoria"),
-        Length(min=10, max=1000, message="La descripción debe tener entre 10 y 1000 caracteres")
-    ], widget=TextArea())
-    
-    categoria_id = SelectField('Categoría', validators=[DataRequired()], coerce=int)
-    
-    cantidad = IntegerField('Cantidad', validators=[
-        DataRequired(message="La cantidad es obligatoria"),
-        NumberRange(min=1, message="La cantidad debe ser mayor a 0")
-    ], default=1)
-    
-    ubicacion = StringField('Ubicación', validators=[
-        Optional(),
-        Length(max=255, message="La ubicación no puede exceder 255 caracteres")
-    ])
-    
-    codigo_barras = StringField('Código de Barras (uuid)', validators=[
-        Optional(),
-        Length(max=100, message="El código de barras no puede exceder 100 caracteres")
-    ])
-    
-    valor_adquisicion = DecimalField('Valor de Adquisición', validators=[
-        Optional(),
-        NumberRange(min=0, message="El valor debe ser mayor o igual a 0")
-    ], places=2)
-    
-    proveedor = StringField('Proveedor', validators=[
-        Optional(),
-        Length(max=255, message="El proveedor no puede exceder 255 caracteres")
-    ])
-    
-    marca = StringField('Marca', validators=[
-        DataRequired(message="La marca es obligatoria"),
-        Length(max=100, message="La marca no puede exceder 100 caracteres")
-    ])
-    
-    modelo = StringField('Modelo', validators=[
-        DataRequired(message="El modelo es obligatorio"),
-        Length(max=100, message="El modelo no puede exceder 100 caracteres")
-    ])
-    
+    nombre = StringField('Nombre', validators=[DataRequired(), Length(max=255)])
+    descripcion = TextAreaField('Descripción', validators=[DataRequired()])
+    categoria_id = SelectField('Categoría', coerce=int, validators=[DataRequired()])
+    cantidad = IntegerField('Cantidad', validators=[DataRequired(), NumberRange(min=1)])
+    ubicacion = StringField('Ubicación', validators=[Length(max=255)])
+    # codigo_barras = StringField('Código de Barras', validators=[Length(max=100)])  # Opcional
+    # valor_adquisicion = DecimalField('Valor de Adquisición', validators=[Optional()])
+    # proveedor = StringField('Proveedor', validators=[Length(max=255)])
+    marca = StringField('Marca', validators=[Length(max=100)])
+    modelo = StringField('Modelo', validators=[Length(max=100)])
     submit = SubmitField('Guardar Producto')
 
     def __init__(self, *args, **kwargs):
-        super(ProductoForm, self).__init__(*args, **kwargs)
-        # Cargar categorías dinámicamente
+        super().__init__(*args, **kwargs)
+        # Cargar categorías activas para el select
         self.categoria_id.choices = [(c.id, c.nombre) for c in Categoria.query.filter_by(activo=True).all()]
-
+        
 class CategoriaForm(FlaskForm):
     """Formulario para crear/editar categorías"""
     nombre = StringField('Nombre de la Categoría', validators=[
@@ -77,6 +41,7 @@ class CategoriaForm(FlaskForm):
 
 class AsignacionForm(FlaskForm):
     """Formulario para asignar productos a usuarios"""
+    uuid_unidad = SelectField('Unidad a asignar (UUID)', validators=[DataRequired()])
     usuario_asignado_id = SelectField('Usuario a Asignar', validators=[DataRequired()], coerce=int)
     
     motivo_asignacion = StringField('Motivo de Asignación', validators=[
@@ -93,40 +58,33 @@ class AsignacionForm(FlaskForm):
     
     submit = SubmitField('Asignar Producto')
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, producto_id=None, *args, **kwargs):
         super(AsignacionForm, self).__init__(*args, **kwargs)
-        # Cargar usuarios dinámicamente (excluyendo admins si es necesario)
         from src.accounts.models import User
         self.usuario_asignado_id.choices = [(u.id, f"{u.nombre} {u.apellido} ({u.username})") 
                                           for u in User.query.all()]
+        from src.inventario.models import Inventario
+        if producto_id:
+            unidades = Inventario.query.filter_by(id=producto_id, estado='en_bodega').all()
+            self.uuid_unidad.choices = [(u.uuid, f"{u.uuid} - {u.nombre}") for u in unidades]
 
 class InformeBajaForm(FlaskForm):
     """Formulario para reportar baja de productos"""
-    motivo = SelectField('Motivo de Baja', validators=[DataRequired()], choices=[
-        ('deterioro', 'Deterioro'),
-        ('obsolescencia', 'Obsolescencia'),
-        ('perdida', 'Pérdida'),
-        ('robo', 'Robo'),
-        ('otro', 'Otro')
+    uuid_unidad = SelectField('Unidad a dar de baja (UUID)', validators=[DataRequired()])
+    def __init__(self, producto_id=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from src.inventario.models import Inventario
+        if producto_id:
+            unidades = Inventario.query.filter_by(id=producto_id, estado='en_bodega').all()
+            self.uuid_unidad.choices = [(u.uuid, f"{u.uuid} - {u.nombre}") for u in unidades]
+    motivo_otro = StringField('Especifique el motivo', validators=[Length(max=100)], render_kw={"placeholder": "Si selecciona 'Otro', escriba el motivo"})
+    descripcion_detallada = TextAreaField('Descripción Detallada', validators=[DataRequired()])
+    fecha_baja = DateField('Fecha de Baja', validators=[DataRequired()])  # Selector de fecha
+    valor_residual = DecimalField('Valor Residual', validators=[Optional()])
+    documento_adjunto = FileField('Documento Adjunto', validators=[
+        FileAllowed(['pdf', 'jpg', 'png', 'jpeg'], 'Solo PDF o imagen')
     ])
-    
-    descripcion_detallada = TextAreaField('Descripción Detallada', validators=[
-        DataRequired(message="La descripción detallada es obligatoria"),
-        Length(min=20, max=2000, message="La descripción debe tener entre 20 y 2000 caracteres")
-    ], widget=TextArea())
-    
-    valor_residual = DecimalField('Valor Residual Estimado', validators=[
-        Optional(),
-        NumberRange(min=0, message="El valor debe ser mayor o igual a 0")
-    ], places=2)
-    
-    documento_adjunto = FileField('Documento Justificante', validators=[
-        Optional(),
-        FileAllowed(['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'], 
-                   'Solo se permiten archivos PDF, DOC, DOCX, JPG, JPEG, PNG')
-    ])
-    
-    submit = SubmitField('Enviar Informe de Baja')
+    submit = SubmitField('Enviar Informe')
 
 class CambiarEstadoForm(FlaskForm):
     """Formulario para cambiar el estado de un producto"""
@@ -164,3 +122,6 @@ class FiltroInventarioForm(FlaskForm):
         # Cargar categorías dinámicamente
         categorias = [('', 'Todas las categorías')] + [(c.id, c.nombre) for c in Categoria.query.filter_by(activo=True).all()]
         self.categoria_id.choices = categorias
+
+
+
