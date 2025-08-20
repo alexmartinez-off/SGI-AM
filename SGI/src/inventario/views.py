@@ -69,40 +69,52 @@ def ver_producto(id):
 @inventario_bp.route('/dashboard_inventario')
 @login_required
 def dashboard_inventario():
-    # Calcula las estadísticas que tu dashboard necesita
-    estadisticas = {
-        "total": Inventario.query.count(),
-        "disponibles": Inventario.query.filter_by(estado='en_bodega').count(),
-        "asignados": Inventario.query.filter_by(estado='en_uso').count(),
-        "mantenimiento": Inventario.query.filter_by(estado='daniado').count(),
-        "nuevos_mes": Inventario.query.filter(
-            Inventario.fecha_registro >= datetime.utcnow().replace(day=1)
-        ).count(),
-        "asignaciones_mes": Historial.query.filter(
-            Historial.accion == 'asignado',
-            Historial.fecha >= datetime.utcnow().replace(day=1)
-        ).count(),
-        "mantenimientos_mes": Historial.query.filter(
-            Historial.accion == 'mantenimiento',
-            Historial.fecha >= datetime.utcnow().replace(day=1)
-        ).count(),
-        "bajas_mes": Historial.query.filter(
-            Historial.accion == 'dado_de_baja',
-            Historial.fecha >= datetime.utcnow().replace(day=1)
-        ).count(),
-        "por_categoria": [
-            {
-                "nombre": cat.nombre,
-                "cantidad": cat.cantidad
-            } for cat in db.session.query(
-                Categoria.nombre,
-                func.count(Inventario.id).label('cantidad')
-            ).outerjoin(Inventario).group_by(Categoria.id, Categoria.nombre).all()
-        ]
-    }
+    try:
+        estadisticas = {
+            "total": Inventario.query.count(),
+            "disponibles": Inventario.query.filter_by(estado='en_bodega').count(),
+            "asignados": Inventario.query.filter_by(estado='en_uso').count(),
+            "mantenimiento": Inventario.query.filter_by(estado='daniado').count(),
+            "nuevos_mes": Inventario.query.filter(
+                Inventario.fecha_registro >= datetime.utcnow().replace(day=1)
+            ).count(),
+            "asignaciones_mes": Historial.query.filter(
+                Historial.accion == 'asignado',
+                Historial.fecha >= datetime.utcnow().replace(day=1)
+            ).count(),
+            "mantenimientos_mes": Historial.query.filter(
+                Historial.accion == 'mantenimiento',
+                Historial.fecha >= datetime.utcnow().replace(day=1)
+            ).count(),
+            "bajas_mes": Historial.query.filter(
+                Historial.accion == 'dado_de_baja',
+                Historial.fecha >= datetime.utcnow().replace(day=1)
+            ).count(),
+            "por_categoria": [
+                {
+                    "nombre": cat.nombre,
+                    "cantidad": cat.cantidad
+                } for cat in db.session.query(
+                    Categoria.nombre,
+                    func.count(Inventario.id).label('cantidad')
+                ).outerjoin(Inventario).group_by(Categoria.id, Categoria.nombre).all()
+            ]
+        }
+    except Exception as e:
+        estadisticas = {
+            "total": 0,
+            "disponibles": 0,
+            "asignados": 0,
+            "mantenimiento": 0,
+            "nuevos_mes": 0,
+            "asignaciones_mes": 0,
+            "mantenimientos_mes": 0,
+            "bajas_mes": 0,
+            "por_categoria": []
+        }
+        flash(f'Error cargando estadísticas: {str(e)}', 'danger')
 
-    # Ejemplo de actividad reciente
-    actividad_reciente = Historial.query.order_by(Historial.fecha.desc()).limit(10).all()
+    actividad_reciente = Historial.query.order_by(Historial.fecha.desc()).limit(10).all() if 'Historial' in globals() else []
 
     return render_template(
         'inventario/dashboard.html',
@@ -447,7 +459,7 @@ def api_estadisticas():
             'en_bodega': Inventario.query.filter_by(estado='en_bodega').count(),
             'en_uso': Inventario.query.filter_by(estado='en_uso').count(),
             'daniado': Inventario.query.filter_by(estado='daniado').count(),
-            'dado_de_baja': Inventario.query.filter_by(estado='dado_de_baja').count()
+            'dado_de_baja': Inventario.query.filter_by(estado='daniado').count()
         },
         'por_categoria': [
             {
