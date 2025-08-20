@@ -106,51 +106,6 @@
   </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const passwordField = document.getElementById('password');
-    const confirmPasswordField = document.getElementById('confirm_password');
-    
-    if (passwordField && confirmPasswordField) {
-        // Función para limpiar errores
-        function clearPasswordErrors() {
-            const passwordErrors = passwordField.parentElement.querySelectorAll('.text-danger');
-            const confirmErrors = confirmPasswordField.parentElement.querySelectorAll('.text-danger');
-            
-            passwordErrors.forEach(error => error.remove());
-            confirmErrors.forEach(error => error.remove());
-        }
-        
-        // Función para actualizar el estado del campo de confirmación
-        function updateConfirmPasswordState() {
-            if (passwordField.value.trim() === '') {
-                confirmPasswordField.disabled = true;
-                confirmPasswordField.value = '';
-                confirmPasswordField.placeholder = 'Ingresa una contraseña primero';
-                confirmPasswordField.parentElement.querySelector('small').textContent = '(Ingresa una contraseña primero)';
-                
-                // Limpiar errores cuando el campo está vacío
-                clearPasswordErrors();
-            } else {
-                confirmPasswordField.disabled = false;
-                confirmPasswordField.placeholder = 'Confirmar contraseña';
-                confirmPasswordField.parentElement.querySelector('small').textContent = '(Confirma la nueva contraseña)';
-            }
-        }
-        
-        // Ejecutar al cargar la página
-        updateConfirmPasswordState();
-        
-        // Ejecutar cuando cambie el campo de contraseña
-        passwordField.addEventListener('input', updateConfirmPasswordState);
-        
-        // Limpiar errores al escribir
-        passwordField.addEventListener('input', function() {
-            if (this.value.trim() === '') {
-                clearPasswordErrors();
-            }
-        });
-    }
-});
-</script>
+<!-- JavaScript externo para editar usuario -->
+<script src="{{ url_for('static', filename='js/editar-usuario.js') }}"></script>
 {% endblock %}
