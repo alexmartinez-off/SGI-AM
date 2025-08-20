@@ -71,12 +71,12 @@ class AsignacionForm(FlaskForm):
 class InformeBajaForm(FlaskForm):
     """Formulario para reportar baja de productos"""
     uuid_unidad = SelectField('Unidad a dar de baja (UUID)', validators=[DataRequired()])
-    def __init__(self, producto_id=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        from src.inventario.models import Inventario
-        if producto_id:
-            unidades = Inventario.query.filter_by(id=producto_id, estado='en_bodega').all()
-            self.uuid_unidad.choices = [(u.uuid, f"{u.uuid} - {u.nombre}") for u in unidades]
+    motivo = SelectField('Motivo', choices=[
+        ('obsoleto', 'Obsoleto'),
+        ('daniado', 'Dañado'),
+        ('extraviado', 'Extraviado'),
+        ('otro', 'Otro')
+    ], validators=[DataRequired()])
     motivo_otro = StringField('Especifique el motivo', validators=[Length(max=100)], render_kw={"placeholder": "Si selecciona 'Otro', escriba el motivo"})
     descripcion_detallada = TextAreaField('Descripción Detallada', validators=[DataRequired()])
     fecha_baja = DateField('Fecha de Baja', validators=[DataRequired()])  # Selector de fecha
@@ -85,6 +85,13 @@ class InformeBajaForm(FlaskForm):
         FileAllowed(['pdf', 'jpg', 'png', 'jpeg'], 'Solo PDF o imagen')
     ])
     submit = SubmitField('Enviar Informe')
+
+    def __init__(self, producto_id=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from src.inventario.models import Inventario
+        if producto_id:
+            unidades = Inventario.query.filter_by(id=producto_id, estado='en_bodega').all()
+            self.uuid_unidad.choices = [(u.uuid, f"{u.uuid} - {u.nombre}") for u in unidades]
 
 class CambiarEstadoForm(FlaskForm):
     """Formulario para cambiar el estado de un producto"""
