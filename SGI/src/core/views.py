@@ -23,22 +23,49 @@ def index():
     
     # Estadísticas de usuarios
     total_usuarios = User.query.count()
-    
-    # Estadísticas de inventario (si está disponible)
-    total_productos = 0
-    productos_en_bodega = 0
-    productos_en_uso = 0
+
+    estadisticas = {
+        'total': 0,
+        'disponibles': 0,
+        'asignados': 0,
+        'mantenimiento': 0,
+        'baja': 0,
+        'por_categoria': [],
+        'nuevos_mes': 0,
+        'asignaciones_mes': 0,
+        'mantenimientos_mes': 0,
+        'bajas_mes': 0
+    }
     ultimos_productos = []
-    
+
     if Inventario:
-        total_productos = Inventario.query.count()
-        productos_en_bodega = Inventario.query.filter_by(estado='en_bodega').count()
-        productos_en_uso = Inventario.query.filter_by(estado='en_uso').count()
+        estadisticas['total'] = Inventario.query.count()
+        estadisticas['disponibles'] = Inventario.query.filter_by(estado='en_bodega').count()
+        estadisticas['asignados'] = Inventario.query.filter_by(estado='en_uso').count()
+        estadisticas['mantenimiento'] = Inventario.query.filter_by(estado='daniado').count()
+        estadisticas['baja'] = Inventario.query.filter_by(estado='dado_de_baja').count()
         ultimos_productos = Inventario.query.order_by(desc(Inventario.fecha_registro)).limit(3).all()
-    
+        # Por categoría
+        if Categoria:
+            estadisticas['por_categoria'] = [
+                {
+                    'nombre': cat.nombre,
+                    'cantidad': len(cat.productos)
+                } for cat in Categoria.query.all()
+            ]
+        # Nuevos este mes
+        from datetime import datetime
+        from sqlalchemy import extract
+        mes_actual = datetime.now().month
+        anio_actual = datetime.now().year
+        estadisticas['nuevos_mes'] = Inventario.query.filter(
+            extract('month', Inventario.fecha_registro) == mes_actual,
+            extract('year', Inventario.fecha_registro) == anio_actual
+        ).count()
+        # Asignaciones, mantenimientos y bajas del mes (requiere modelos y lógica extra)
+        # Si tienes modelos de historial, puedes agregar aquí los conteos
+
     return render_template("core/index.html", 
-                         total_usuarios=total_usuarios,
-                         total_productos=total_productos,
-                         productos_en_bodega=productos_en_bodega,
-                         productos_en_uso=productos_en_uso,
+                         estadisticas=estadisticas, 
+                         total_usuarios=total_usuarios, 
                          ultimos_productos=ultimos_productos)
