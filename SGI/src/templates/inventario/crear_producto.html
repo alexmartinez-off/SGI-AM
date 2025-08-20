@@ -11,10 +11,9 @@
                 </h3>
             </div>
             <div class="card-body">
-                
-                <form method="POST" enctype="multipart/form-data">
+                <form method="POST">
                     {{ form.hidden_tag() }}
-                    
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
@@ -43,125 +42,36 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
                                 {{ form.marca.label(class="form-label") }}
-                                {{ form.marca(class="form-control" + (" is-invalid" if form.marca.errors else "")) }}
-                                {% if form.marca.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.marca.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
+                                {{ form.marca(class="form-control") }}
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 {{ form.modelo.label(class="form-label") }}
-                                {{ form.modelo(class="form-control" + (" is-invalid" if form.modelo.errors else "")) }}
-                                {% if form.modelo.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.modelo.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
+                                {{ form.modelo(class="form-control") }}
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                {{ form.numero_serie.label(class="form-label") }}
-                                {{ form.numero_serie(class="form-control" + (" is-invalid" if form.numero_serie.errors else "")) }}
-                                {% if form.numero_serie.errors %}
+                                {{ form.cantidad.label(class="form-label") }}
+                                {{ form.cantidad(class="form-control" + (" is-invalid" if form.cantidad.errors else "")) }}
+                                {% if form.cantidad.errors %}
                                 <div class="invalid-feedback">
-                                    {% for error in form.numero_serie.errors %}
+                                    {% for error in form.cantidad.errors %}
                                         {{ error }}
                                     {% endfor %}
                                 </div>
                                 {% endif %}
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                {{ form.codigo_barras.label(class="form-label") }}
-                                {{ form.codigo_barras(class="form-control" + (" is-invalid" if form.codigo_barras.errors else "")) }}
-                                {% if form.codigo_barras.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.codigo_barras.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-                                <div class="form-text">Opcional. Se puede usar para búsquedas rápidas.</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                {{ form.valor_adquisicion.label(class="form-label") }}
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    {{ form.valor_adquisicion(class="form-control" + (" is-invalid" if form.valor_adquisicion.errors else "")) }}
-                                </div>
-                                {% if form.valor_adquisicion.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {% for error in form.valor_adquisicion.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                {{ form.fecha_adquisicion.label(class="form-label") }}
-                                {{ form.fecha_adquisicion(class="form-control" + (" is-invalid" if form.fecha_adquisicion.errors else "")) }}
-                                {% if form.fecha_adquisicion.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.fecha_adquisicion.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                {{ form.vida_util_anos.label(class="form-label") }}
-                                {{ form.vida_util_anos(class="form-control" + (" is-invalid" if form.vida_util_anos.errors else "")) }}
-                                {% if form.vida_util_anos.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.vida_util_anos.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-                                <div class="form-text">Vida útil estimada en años</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        {{ form.descripcion.label(class="form-label") }}
-                        {{ form.descripcion(class="form-control" + (" is-invalid" if form.descripcion.errors else ""), rows="3") }}
-                        {% if form.descripcion.errors %}
-                        <div class="invalid-feedback">
-                            {% for error in form.descripcion.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
                                 {{ form.ubicacion.label(class="form-label") }}
@@ -176,87 +86,53 @@
                                 <div class="form-text">Ubicación física del producto</div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                {{ form.proveedor.label(class="form-label") }}
-                                {{ form.proveedor(class="form-control" + (" is-invalid" if form.proveedor.errors else "")) }}
-                                {% if form.proveedor.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.proveedor.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
                     </div>
-                    
-                    {% if current_user.rol == 'admin' %}
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                {{ form.estado.label(class="form-label") }}
-                                {{ form.estado(class="form-select" + (" is-invalid" if form.estado.errors else "")) }}
-                                {% if form.estado.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.estado.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-                            </div>
+
+                    <div class="mb-3">
+                        {{ form.descripcion.label(class="form-label") }}
+                        {{ form.descripcion(class="form-control" + (" is-invalid" if form.descripcion.errors else ""), rows="3") }}
+                        {% if form.descripcion.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.descripcion.errors %}
+                                {{ error }}
+                            {% endfor %}
                         </div>
-                        <div class="col-md-6">
-                            {% if form.imagen %}
-                            <div class="mb-3">
-                                {{ form.imagen.label(class="form-label") }}
-                                {{ form.imagen(class="form-control" + (" is-invalid" if form.imagen.errors else "")) }}
-                                {% if form.imagen.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.imagen.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-                                <div class="form-text">Formatos permitidos: JPG, PNG, GIF (máx. 5MB)</div>
-                            </div>
-                            {% endif %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Campos eliminados/comentados porque NO existen en la base de datos ni en el form:
+                    - numero_serie
+                    - codigo_barras
+                    - valor_adquisicion
+                    - fecha_adquisicion
+                    - vida_util_anos
+                    - proveedor
+                    - imagen
+
+
+                    FALATA AÑADIR USUARIO ASIGNADO, FECHA DE ASIGNACION Y INFO ADIOCIONAL ESO ESTA EN LA BASE DE DATOS PERO NO SE A QUE CAMPO PERTENECE SI PRESISAMENTE A CREAR INVENTARIO A LO MEJOR PERTENECE OTRO CAMPO ESO DEBE REVISARSE 
+                    -->
+
+                    {% if current_user.rol == 'admin' and form.estado %}
+                    <div class="mb-3">
+                        {{ form.estado.label(class="form-label") }}
+                        {{ form.estado(class="form-select" + (" is-invalid" if form.estado.errors else "")) }}
+                        {% if form.estado.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.estado.errors %}
+                                {{ error }}
+                            {% endfor %}
                         </div>
+                        {% endif %}
                     </div>
                     {% endif %}
-                    
-                    <!-- Información adicional para edición -->
-                    {% if producto %}
-                    <div class="alert alert-info">
-                        <h6><i class="fas fa-info-circle"></i> Información del Producto</h6>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <strong>Código:</strong> {{ producto.codigo_producto }}<br>
-                                <strong>Fecha de Registro:</strong> {{ producto.fecha_registro.strftime('%d/%m/%Y %H:%M') }}
-                            </div>
-                            <div class="col-md-6">
-                                <strong>Última Modificación:</strong> {{ producto.fecha_modificacion.strftime('%d/%m/%Y %H:%M') if producto.fecha_modificacion else 'No modificado' }}<br>
-                                <strong>Estado Actual:</strong> 
-                                {% if producto.estado == 'disponible' %}
-                                    <span class="badge bg-success">Disponible</span>
-                                {% elif producto.estado == 'asignado' %}
-                                    <span class="badge bg-warning">Asignado</span>
-                                {% elif producto.estado == 'mantenimiento' %}
-                                    <span class="badge bg-info">En Mantenimiento</span>
-                                {% elif producto.estado == 'dado_de_baja' %}
-                                    <span class="badge bg-danger">Dado de Baja</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-                    
+
                     <div class="d-flex justify-content-between">
                         <a href="{{ url_for('inventario.listar_productos') }}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Volver
                         </a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> 
+                            <i class="fas fa-save"></i>
                             {% if producto %}Actualizar Producto{% else %}Crear Producto{% endif %}
                         </button>
                     </div>
