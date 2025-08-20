@@ -13,6 +13,39 @@ from src.accounts.views import admin_required
 
 # Crear el blueprint para inventario
 inventario_bp = Blueprint('inventario', __name__)
+
+@inventario_bp.route('/producto/<int:id>/cambiar_estado', methods=['GET', 'POST'])
+@login_required
+def cambiar_estado_producto(id):
+    producto = Inventario.query.get_or_404(id)
+    form = CambiarEstadoForm()
+    if form.validate_on_submit():
+        estado_anterior = producto.estado
+        estado_nuevo = form.estado_nuevo.data
+        if estado_anterior != estado_nuevo:
+            producto.estado = estado_nuevo
+            # Si se da de baja, verificar que exista informe de baja
+            if estado_nuevo == 'dado_de_baja':
+                informe_baja = InformeBaja.query.filter_by(
+                    producto_id=id,
+                    estado_informe='aprobado'
+                ).first()
+                if not informe_baja:
+                    flash('No se puede dar de baja el producto sin un informe de baja aprobado', 'error')
+                    return render_template('inventario/cambiar_estado.html', form=form, producto=producto)
+            registrar_accion_historial(
+                producto.id,
+                'cambio_estado',
+                form.descripcion.data,
+                estado_anterior=estado_anterior,
+                estado_nuevo=estado_nuevo
+            )
+            db.session.commit()
+            flash(f'Estado del producto cambiado de "{producto.estado_display}" a "{form.estado_nuevo.data}"', 'success')
+            return redirect(url_for('inventario.ver_producto', id=producto.id))
+        else:
+            flash('El estado seleccionado es el mismo que el actual', 'warning')
+    return render_template('inventario/cambiar_estado.html', form=form, producto=producto)
 def registrar_accion_historial(producto_id, accion, descripcion, estado_anterior=None, estado_nuevo=None):
     """Función auxiliar para registrar acciones en el historial"""
     historial = Historial(
@@ -24,6 +57,14 @@ def registrar_accion_historial(producto_id, accion, descripcion, estado_anterior
         estado_nuevo=estado_nuevo
     )
     db.session.add(historial)
+
+@inventario_bp.route('/producto/<int:id>')
+@login_required
+def ver_producto(id):
+    producto = Inventario.query.get_or_404(id)
+    historial = Historial.query.filter_by(producto_id=id).order_by(desc(Historial.fecha)).all()
+    asignaciones = Asignacion.query.filter_by(producto_id=id).order_by(desc(Asignacion.fecha_asignacion)).all()
+    return render_template('inventario/ver_producto.html', producto=producto, historial=historial, asignaciones=asignaciones)
 
 @inventario_bp.route('/dashboard_inventario')
 @login_required
@@ -124,40 +165,58 @@ def listar_productos():
 @inventario_bp.route('/producto/nuevo', methods=['GET', 'POST'])
 @login_required
 def crear_producto():
-    """Crear un nuevo producto"""
     form = ProductoForm()
-    
     if form.validate_on_submit():
-        producto = Inventario(
-            nombre=form.nombre.data,
-            descripcion=form.descripcion.data,
-            categoria_id=form.categoria_id.data,
-            cantidad=form.cantidad.data,
-            ubicacion=form.ubicacion.data,
-            codigo_barras=form.codigo_barras.data,
-            valor_adquisicion=form.valor_adquisicion.data,
-            proveedor=form.proveedor.data
-        )
-        
-        db.session.add(producto)
-        db.session.flush()  # Para obtener el ID del producto
-        
-        # Registrar en historial
-        registrar_accion_historial(
-            producto.id, 
-            'creado', 
-            f'Producto "{producto.nombre}" registrado en el sistema'
-        )
-        
+        # Crear una o varias unidades según cantidad
+        cantidad = form.cantidad.data or 1
+        for _ in range(cantidad):
+            producto = Inventario(
+                nombre=form.nombre.data,
+                descripcion=form.descripcion.data,
+                categoria_id=form.categoria_id.data,
+                estado='en_bodega',
+                fecha_registro=datetime.utcnow()
+            )
+            db.session.add(producto)
+            db.session.flush()  # Para obtener el ID
+            registrar_accion_historial(
+                producto.id,
+                'creado',
+                f'Producto creado: {producto.nombre}'
+            )
         db.session.commit()
-        flash('Producto creado exitosamente', 'success')
-        return redirect(url_for('inventario.ver_producto', id=producto.id))
-    
+        flash('Producto(s) creado(s) exitosamente', 'success')
+        return redirect(url_for('inventario.listar_productos'))
     return render_template('inventario/crear_producto.html', form=form)
-
-@inventario_bp.route('/producto/<int:id>')
-@login_required
-def ver_producto(id):
+    producto = Inventario.query.get_or_404(id)
+    form = CambiarEstadoForm()
+    if form.validate_on_submit():
+        estado_anterior = producto.estado
+        estado_nuevo = form.estado_nuevo.data
+        if estado_anterior != estado_nuevo:
+            producto.estado = estado_nuevo
+            # Si se da de baja, verificar que exista informe de baja
+            if estado_nuevo == 'dado_de_baja':
+                informe_baja = InformeBaja.query.filter_by(
+                    producto_id=id, 
+                    estado_informe='aprobado'
+                ).first()
+                if not informe_baja:
+                    flash('No se puede dar de baja el producto sin un informe de baja aprobado', 'error')
+                    return render_template('inventario/cambiar_estado.html', form=form, producto=producto)
+            registrar_accion_historial(
+                producto.id,
+                'cambio_estado',
+                form.descripcion.data,
+                estado_anterior=estado_anterior,
+                estado_nuevo=estado_nuevo
+            )
+            db.session.commit()
+            flash(f'Estado del producto cambiado de "{producto.estado_display}" a "{form.estado_nuevo.data}"', 'success')
+            return redirect(url_for('inventario.ver_producto', id=producto.id))
+        else:
+            flash('El estado seleccionado es el mismo que el actual', 'warning')
+    return render_template('inventario/cambiar_estado.html', form=form, producto=producto)
     """Ver detalles de un producto específico"""
     producto = Inventario.query.get_or_404(id)
     historial = Historial.query.filter_by(producto_id=id).order_by(desc(Historial.fecha)).all()
@@ -199,32 +258,21 @@ def editar_producto(id):
     
     return render_template('inventario/editar_producto.html', form=form, producto=producto)
 
-@inventario_bp.route('/producto/<int:id>/cambiar_estado', methods=['GET', 'POST'])
-@login_required
-def cambiar_estado_producto(id):
-    """Cambiar el estado de un producto"""
-    producto = Inventario.query.get_or_404(id)
     form = CambiarEstadoForm()
-    
     if form.validate_on_submit():
         estado_anterior = producto.estado
         estado_nuevo = form.estado_nuevo.data
-        
         if estado_anterior != estado_nuevo:
             producto.estado = estado_nuevo
-            
             # Si se da de baja, verificar que exista informe de baja
             if estado_nuevo == 'dado_de_baja':
                 informe_baja = InformeBaja.query.filter_by(
                     producto_id=id, 
                     estado_informe='aprobado'
                 ).first()
-                
                 if not informe_baja:
                     flash('No se puede dar de baja el producto sin un informe de baja aprobado', 'error')
                     return render_template('inventario/cambiar_estado.html', form=form, producto=producto)
-            
-            # Registrar cambio en historial
             registrar_accion_historial(
                 producto.id,
                 'cambio_estado',
@@ -232,14 +280,42 @@ def cambiar_estado_producto(id):
                 estado_anterior=estado_anterior,
                 estado_nuevo=estado_nuevo
             )
-            
             db.session.commit()
             flash(f'Estado del producto cambiado de "{producto.estado_display}" a "{form.estado_nuevo.data}"', 'success')
             return redirect(url_for('inventario.ver_producto', id=producto.id))
         else:
             flash('El estado seleccionado es el mismo que el actual', 'warning')
-    
     return render_template('inventario/cambiar_estado.html', form=form, producto=producto)
+    """Asignar una unidad de producto a un usuario"""
+    producto = Inventario.query.get_or_404(id)
+    form = AsignacionForm(producto_id=id)
+    if form.validate_on_submit():
+        unidad = Inventario.query.filter_by(uuid=form.uuid_unidad.data).first()
+        asignacion = Asignacion(
+            producto_id=unidad.id,
+            usuario_asignado_id=form.usuario_asignado_id.data,
+            asignado_por=current_user.id,
+            motivo_asignacion=form.motivo_asignacion.data,
+            fecha_devolucion_esperada=form.fecha_devolucion_esperada.data,
+            condiciones_uso=form.condiciones_uso.data
+        )
+        unidad.usuario_asignado_id = form.usuario_asignado_id.data
+        unidad.fecha_asignacion = datetime.utcnow()
+        unidad.estado = 'en_uso'
+        db.session.add(asignacion)
+        from src.accounts.models import User
+        usuario = User.query.get(form.usuario_asignado_id.data)
+        registrar_accion_historial(
+            unidad.id,
+            'asignado',
+            f'Unidad asignada a {usuario.nombre} {usuario.apellido} ({usuario.username}). Motivo: {form.motivo_asignacion.data}'
+        )
+        db.session.commit()
+        flash('Unidad asignada exitosamente', 'success')
+        return redirect(url_for('inventario.ver_producto', id=unidad.id))
+    else:
+        return render_template('inventario/asignar_producto.html', form=form, producto=producto)
+            
 
 @inventario_bp.route('/producto/<int:id>/asignar', methods=['GET', 'POST'])
 @login_required
@@ -286,44 +362,38 @@ def asignar_producto(id):
 def crear_informe_baja(id):
     """Crear informe de baja para un producto"""
     producto = Inventario.query.get_or_404(id)
-    form = InformeBajaForm()
-    
+    form = InformeBajaForm(producto_id=id)
     if form.validate_on_submit():
+        # Lógica de validación de informe
+        estado_informe = 'aprobado' if current_user.rol == 'admin' else 'pendiente'
+        motivo_final = form.motivo_otro.data if form.motivo.data == 'otro' and form.motivo_otro.data else form.motivo.data
         informe = InformeBaja(
             producto_id=id,
             usuario_id=current_user.id,
-            motivo=form.motivo.data,
+            motivo=motivo_final,
             descripcion_detallada=form.descripcion_detallada.data,
-            valor_residual=form.valor_residual.data
+            fecha_baja=form.fecha_baja.data,
+            valor_residual=form.valor_residual.data,
+            estado_informe=estado_informe
         )
-        
         # Manejar archivo adjunto si existe
         if form.documento_adjunto.data:
             file = form.documento_adjunto.data
             filename = secure_filename(file.filename)
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             filename = f"{timestamp}_{filename}"
-            
             upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'informes_baja')
             os.makedirs(upload_folder, exist_ok=True)
-            
             file_path = os.path.join(upload_folder, filename)
             file.save(file_path)
             informe.documento_adjunto = filename
-        
         db.session.add(informe)
-        
-        # Registrar en historial
-        registrar_accion_historial(
-            producto.id,
-            'informe_baja_creado',
-            f'Informe de baja creado. Motivo: {form.motivo.data}'
-        )
-        
         db.session.commit()
-        flash('Informe de baja creado exitosamente. Pendiente de aprobación.', 'success')
+        if estado_informe == 'aprobado':
+            flash('Informe de baja creado y aprobado automáticamente (admin).', 'success')
+        else:
+            flash('Informe de baja creado y enviado para revisión de un administrador.', 'info')
         return redirect(url_for('inventario.ver_producto', id=producto.id))
-    
     return render_template('inventario/informe_baja.html', form=form, producto=producto)
 
 @inventario_bp.route('/categorias')
@@ -358,8 +428,13 @@ def crear_categoria():
 @admin_required
 def listar_informes_baja():
     """Lista todos los informes de baja pendientes de aprobación"""
-    informes = InformeBaja.query.filter_by(estado_informe='pendiente').all()
-    return render_template('inventario/listar_informes_baja.html', informes=informes)
+    informes_pendientes = InformeBaja.query.filter_by(estado_informe='pendiente').order_by(InformeBaja.fecha_creacion.desc()).all()
+    informes_aprobados = InformeBaja.query.filter_by(estado_informe='aprobado').order_by(InformeBaja.fecha_creacion.desc()).all()
+    informes_rechazados = InformeBaja.query.filter_by(estado_informe='rechazado').order_by(InformeBaja.fecha_creacion.desc()).all()
+    return render_template('inventario/listar_informes_baja.html',
+        informes_pendientes=informes_pendientes,
+        informes_aprobados=informes_aprobados,
+        informes_rechazados=informes_rechazados)
 
 @inventario_bp.route('/api/estadisticas')
 @login_required
@@ -404,3 +479,51 @@ def eliminar_producto(id):
     db.session.commit()
     flash('Producto eliminado exitosamente', 'success')
     return redirect(url_for('inventario.listar_productos'))
+
+@inventario_bp.route('/producto/<int:id>/historial')
+@login_required
+def ver_historial(id):
+    producto = Inventario.query.get_or_404(id)
+    historial = Historial.query.filter_by(producto_id=id).order_by(Historial.fecha_accion.desc()).all()
+    return render_template('inventario/ver_historial.html', producto=producto, historial=historial)
+
+@inventario_bp.route('/informe_baja/<int:id>')
+@login_required
+def ver_informe_baja(id):
+    informe = InformeBaja.query.get_or_404(id)
+    producto = Inventario.query.get_or_404(informe.producto_id)
+    return render_template('inventario/ver_informe_baja.html', informe=informe, producto=producto)
+
+
+
+@inventario_bp.route('/informe_baja/<int:id>/aprobar', methods=['POST', 'GET'])
+@login_required
+@admin_required
+def aprobar_informe_baja(id):
+    informe = InformeBaja.query.get_or_404(id)
+    unidad = Inventario.query.get_or_404(informe.producto_id)
+    # Registrar en historial
+    registrar_accion_historial(
+        unidad.id,
+        'dado_de_baja',
+        f'Unidad dada de baja por informe aprobado. UUID: {unidad.uuid}'
+    )
+    db.session.delete(unidad)
+    db.session.delete(informe)
+    db.session.commit()
+    flash(f'Unidad {unidad.uuid} dada de baja y eliminada del inventario.', 'success')
+    return redirect(url_for('inventario.listar_informes_baja'))
+
+@inventario_bp.route('/informe_baja/<int:id>/rechazar', methods=['POST', 'GET'])
+@login_required
+@admin_required
+def rechazar_informe_baja(id):
+    informe = InformeBaja.query.get_or_404(id)
+    informe.estado_informe = 'rechazado'
+    informe.aprobado = False
+    informe.aprobado_por = current_user.id
+    informe.fecha_aprobacion = datetime.utcnow()
+    db.session.commit()
+    flash('Informe de baja rechazado.', 'info')
+    return redirect(url_for('inventario.listar_informes_baja'))
+
