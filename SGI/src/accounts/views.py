@@ -13,7 +13,7 @@ from flask_mail import Message
 accounts_bp = Blueprint("accounts", __name__)
 
 # Constantes para las rutas principales del módulo
-HOME_URL = "accounts.home"
+HOME_URL = "accounts.profile"
 SETUP_2FA_URL = "accounts.setup_two_factor_auth"
 VERIFY_2FA_URL = "accounts.verify_two_factor_auth"
 
@@ -76,7 +76,7 @@ def register():
                 email=form.email.data,
                 telefono=form.telefono.data,
                 password=form.password.data,
-                rol=form.rol.data
+               
             )
             db.session.add(user)
             db.session.commit()
