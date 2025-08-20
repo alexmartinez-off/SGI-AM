@@ -48,6 +48,8 @@ def load_user(user_id):
 # Registrar blueprints
 from src.accounts.views import accounts_bp
 from src.core.views import core_bp
+from src.inventario.views import inventario_bp
 
 app.register_blueprint(accounts_bp)
 app.register_blueprint(core_bp)
+app.register_blueprint(inventario_bp)
