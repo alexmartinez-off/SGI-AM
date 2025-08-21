@@ -1,13 +1,13 @@
 <div id="sidebar" class="d-flex flex-column p-3">
     <!-- Nombre del Sistema -->
-    <a href="{{ url_for('core.home') }}" class="navbar-brand text-center text-light w-100 p-3 border-bottom">
+    <a href="{{ url_for('core.index') }}" class="navbar-brand text-center text-light w-100 p-3 border-bottom">
         <h4>SGI-AM</h4>
     </a>
 
     <!-- Menú de Navegación del Sidebar -->
     <ul class="nav nav-pills flex-column mb-auto mt-3 ">
         <li class="nav-item mb-1">
-            <a href="{{ url_for('core.home') }}" class="nav-link text-white">
+            <a href="{{ url_for('core.index') }}" class="nav-link text-white">
                 <i class="fa fa-tachometer-alt me-2"></i>Dashboard
             </a>
         </li>
@@ -23,10 +23,44 @@
             </a>
         </li>
         {% endif %}
+        
+        <!-- Menú de Inventario -->
         <li class="nav-item mb-1">
-            <a href="#" class="nav-link text-white">
-                <i class="fa fa-box-open me-2"></i>Inventario
+            <a class="nav-link text-white" data-bs-toggle="collapse" href="#inventarioMenu" role="button" aria-expanded="false" aria-controls="inventarioMenu">
+                <i class="fa fa-boxes me-2"></i>Inventario
+                <i class="fa fa-chevron-down float-end mt-1"></i>
             </a>
+            <div class="collapse" id="inventarioMenu">
+                <ul class="nav flex-column ms-3">
+                    <li class="nav-item">
+                        <a href="{{ url_for('inventario.dashboard_inventario') }}" class="nav-link text-white-50">
+                            <i class="fa fa-chart-bar me-2"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('inventario.listar_productos') }}" class="nav-link text-white-50">
+                            <i class="fa fa-list me-2"></i>Lista de Productos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('inventario.crear_producto') }}" class="nav-link text-white-50">
+                            <i class="fa fa-plus me-2"></i>Nuevo Producto
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url_for('inventario.listar_categorias') }}" class="nav-link text-white-50">
+                            <i class="fa fa-tags me-2"></i>Categorías
+                        </a>
+                    </li>
+                    {% if current_user.is_admin() %}
+                    <li class="nav-item">
+                        <a href="{{ url_for('inventario.listar_informes_baja') }}" class="nav-link text-white-50">
+                            <i class="fa fa-file-alt me-2"></i>Informes de Baja
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
         </li>
         <li class="nav-item mb-1">
             <a href="#" class="nav-link text-white">
