@@ -6,7 +6,7 @@
     </button>
     
     <!-- Nombre del sistema -->
-    <a class="navbar-brand" href="{{ url_for('core.home') }}">Sistema de Gestión de Inventario</a>
+    <a class="navbar-brand" href="{{ url_for('core.index') }}">Sistema de Gestión de Inventario</a>
 
     <!-- Botón de colapso para el menú de la derecha en móviles (DERECHA) -->
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,7 +33,7 @@
           <!-- Usuario -->
           <li class="nav-item dropdown list-unstyled">
             <a class="nav-link dropdown-toggle d-flex align-items-center text-muted" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <img src="{{ url_for('static', filename='img/iconDanM.jpg') }}" alt="Perfil" width="32" height="32" class="rounded-circle me-2">
+              <img src="{{ url_for('static', filename='img/user.jpg') }}" alt="Perfil" width="32" height="32" class="rounded-circle me-2">
               {{ current_user.username }}
             </a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
