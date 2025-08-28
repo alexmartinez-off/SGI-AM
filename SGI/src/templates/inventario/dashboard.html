@@ -1,0 +1,171 @@
+{% extends "inventario/_inventario_base.html" %}
+
+{% block inventario_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-tachometer-alt"></i> Dashboard de Inventario</h1>
+    <div class="action-buttons">
+        {% if current_user.rol == 'admin' %}
+        <a href="{{ url_for('inventario.crear_producto') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nuevo Producto
+        </a>
+        <a href="{{ url_for('inventario.listar_categorias') }}" class="btn btn-secondary">
+            <i class="fas fa-tags"></i> Categorías
+        </a>
+        {% endif %}
+        <a href="{{ url_for('inventario.listar_productos') }}" class="btn btn-outline-primary">
+            <i class="fas fa-list"></i> Ver Inventario
+        </a>
+    </div>
+</div>
+
+<!-- Estadísticas principales -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card info-card">
+            <div class="bg-dark card-body text-center ">
+                <i class="fas fa-boxes fa-2x text-primary mb-2"></i>
+                <h5 class="card-title">Total Productos</h5>
+                <h2 class="text-primary" id="total-productos">{{ estadisticas.total }}</h2>
+                <small class="text-muted">Registrados en el sistema</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card info-card">
+            <div class="bg-dark card-body text-center ">
+                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                <h5 class="card-title">Disponibles</h5>
+                <h2 class="text-success" id="productos-disponibles">{{ estadisticas.disponibles }}</h2>
+                <small class="text-muted">Listos para asignar</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card info-card">
+            <div class="bg-dark card-body text-center ">
+                <i class="fas fa-user-check fa-2x text-warning mb-2"></i>
+                <h5 class="card-title">Asignados</h5>
+                <h2 class="text-warning" id="productos-asignados">{{ estadisticas.asignados }}</h2>
+                <small class="text-muted">En uso por usuarios</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card info-card">
+            <div class=" bg-custom-dark card-body text-center">
+                <i class="fas fa-tools fa-2x text-info mb-2"></i>
+                <h5 class="card-title">En Mantenimiento</h5>
+                <h2 class="text-info" id="productos-mantenimiento">{{ estadisticas.mantenimiento }}</h2>
+                <small class="text-muted">Fuera de servicio</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Distribución por Estado</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="chartEstados" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Productos por Categoría</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="chartCategorias" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actividad reciente y productos destacados -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-clock"></i> Actividad Reciente</h5>
+            </div>
+            <div class="card-body">
+                {% if actividad_reciente %}
+                <div class="list-group list-group-flush">
+                    {% for actividad in actividad_reciente %}
+                    <div class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            <div class="fw-bold">{{ actividad.producto.nombre }}</div>
+                            <small class="text-muted">
+                                {{ actividad.accion }} - {{ actividad.descripcion }}
+                                <br>Por: {{ actividad.usuario.nombre }} {{ actividad.usuario.apellido }}
+                            </small>
+                        </div>
+                        <small class="text-muted">{{ actividad.fecha.strftime('%d/%m %H:%M') }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                    <p class="text-muted">No hay actividad reciente</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Resumen rápido -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-line"></i> Resumen Mensual</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h5 class="text-primary">{{ estadisticas.nuevos_mes }}</h5>
+                            <small class="text-muted">Nuevos este mes</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h5 class="text-warning">{{ estadisticas.asignaciones_mes }}</h5>
+                        <small class="text-muted">Asignaciones</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h5 class="text-info">{{ estadisticas.mantenimientos_mes }}</h5>
+                            <small class="text-muted">Mantenimientos</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h5 class="text-danger">{{ estadisticas.bajas_mes }}</h5>
+                        <small class="text-muted">Bajas</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<!-- Scripts específicos del dashboard -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard-inventario.js') }}"></script>
+<script>
+// Pasar datos del servidor a variables globales para el JS externo
+window.dashboardEstadisticas = '{{ estadisticas|tojson|safe }}';
+window.dashboardCategorias = '{{ estadisticas.por_categoria|tojson|safe }}';
+window.estadisticasApiUrl = '{{ url_for("inventario.api_estadisticas") }}';
+</script>
+<script src="{{ url_for('static', filename='js/dashboard-inventario-init.js') }}"></script>
+{% endblock %}
