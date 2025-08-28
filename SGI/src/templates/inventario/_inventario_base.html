@@ -1,0 +1,79 @@
+{% extends "_dashboard_base.html" %}
+
+{% block sidebar %}
+    {% include "_sidebar.html" %}
+{% endblock %}
+
+{% block css %}
+<style>
+    .info-card {
+        border-left: 4px solid #007bff;
+        background: #f8f9fa;
+    }
+    .status-badge {
+        font-size: 0.9em;
+    }
+    .table-responsive {
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    .filter-section {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    .product-image {
+        max-width: 100px;
+        max-height: 100px;
+        object-fit: cover;
+    }
+    .history-timeline {
+        border-left: 2px solid #dee2e6;
+        padding-left: 1rem;
+    }
+    .history-item {
+        position: relative;
+        margin-bottom: 1rem;
+    }
+    .history-item::before {
+        content: '';
+        position: absolute;
+        left: -1.5rem;
+        top: 0.5rem;
+        width: 10px;
+        height: 10px;
+        background: #007bff;
+        border-radius: 50%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        {% if current_user.is_authenticated %}
+            {% block inventario_content %}{% endblock %}
+        {% else %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                Debe iniciar sesión para acceder al sistema de inventario.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<!-- JavaScript externo para funciones base de inventario -->
+<script src="{{ url_for('static', filename='js/inventario-base.js') }}"></script>
+{% endblock %}
