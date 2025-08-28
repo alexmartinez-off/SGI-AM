@@ -186,6 +186,7 @@ def crear_producto():
                 nombre=form.nombre.data,
                 descripcion=form.descripcion.data,
                 categoria_id=form.categoria_id.data,
+                precio=form.precio.data,
                 estado='en_bodega',
                 fecha_registro=datetime.utcnow()
             )
@@ -251,19 +252,21 @@ def editar_producto(id):
             cambios.append(f"Nombre: {producto.nombre} → {form.nombre.data}")
         if producto.descripcion != form.descripcion.data:
             cambios.append("Descripción actualizada")
-        if producto.cantidad != form.cantidad.data:
+        if hasattr(producto, 'cantidad') and producto.cantidad != form.cantidad.data:
             cambios.append(f"Cantidad: {producto.cantidad} → {form.cantidad.data}")
-        
+        if producto.precio != form.precio.data:
+            cambios.append(f"Precio: {producto.precio} → {form.precio.data}")
+
         # Actualizar producto
         form.populate_obj(producto)
-        
+
         if cambios:
             registrar_accion_historial(
                 producto.id,
                 'editado',
                 f'Producto editado. Cambios: {", ".join(cambios)}'
             )
-        
+
         db.session.commit()
         flash('Producto actualizado exitosamente', 'success')
         return redirect(url_for('inventario.ver_producto', id=producto.id))
