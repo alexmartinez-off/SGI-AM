@@ -1,0 +1,290 @@
+{% extends "inventario/_inventario_base.html" %}
+
+{% block inventario_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-box"></i> Detalles del Producto</h1>
+    <div class="action-buttons">
+        {% if current_user.rol == 'admin' %}
+        <a href="{{ url_for('inventario.editar_producto', id=producto.id) }}" class="btn btn-primary">
+            <i class="fas fa-edit"></i> Editar
+        </a>
+        {% if producto.estado != 'dado_de_baja' %}
+        <a href="{{ url_for('inventario.cambiar_estado_producto', id=producto.id) }}" class="btn btn-warning">
+            <i class="fas fa-exchange-alt"></i> Cambiar Estado
+        </a>
+        {% endif %}
+        {% if producto.estado == 'disponible' %}
+        <a href="{{ url_for('inventario.asignar_producto', id=producto.id) }}" class="btn btn-success">
+            <i class="fas fa-user-plus"></i> Asignar
+        </a>
+        {% endif %}
+        {% endif %}
+        <a href="{{ url_for('inventario.listar_productos') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Información principal -->
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> Información General</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="40%">Código:</th>
+                                <td><code>{{ producto.codigo_producto }}</code></td>
+                            </tr>
+                            <tr>
+                                <th>Nombre:</th>
+                                <td><strong>{{ producto.nombre }}</strong></td>
+                            </tr>
+                            <tr>
+                                <th>Categoría:</th>
+                                <td><span class="badge bg-secondary">{{ producto.categoria.nombre }}</span></td>
+                            </tr>
+                            <tr>
+                                <th>Precio:</th>
+                                <td>${{ '{:,.2f}'.format(producto.precio) if producto.precio is not none else '0.00' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Estado:</th>
+                                <td>
+                                    {% if producto.estado == 'disponible' %}
+                                        <span class="badge bg-success">Disponible</span>
+                                    {% elif producto.estado == 'asignado' %}
+                                        <span class="badge bg-warning">Asignado</span>
+                                    {% elif producto.estado == 'mantenimiento' %}
+                                        <span class="badge bg-info">En Mantenimiento</span>
+                                    {% elif producto.estado == 'dado_de_baja' %}
+                                        <span class="badge bg-danger">Dado de Baja</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Marca:</th>
+                                <td>{{ producto.marca or 'No especificado' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Modelo:</th>
+                                <td>{{ producto.modelo or 'No especificado' }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th width="40%">Número de Serie:</th>
+                                <td>{{ producto.numero_serie or 'No especificado' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Código de Barras:</th>
+                                <td>{{ producto.codigo_barras or 'No especificado' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Ubicación:</th>
+                                <td>{{ producto.ubicacion or 'No especificado' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Proveedor:</th>
+                                <td>{{ producto.proveedor or 'No especificado' }}</td>
+                            </tr>
+                            <tr>
+                                <th>Fecha de Registro:</th>
+                                <td>{{ producto.fecha_registro.strftime('%d/%m/%Y %H:%M') }}</td>
+                            </tr>
+                            <tr>
+                                <th>Última Modificación:</th>
+                                <td>{{ producto.fecha_modificacion.strftime('%d/%m/%Y %H:%M') if producto.fecha_modificacion else 'No modificado' }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                {% if producto.descripcion %}
+                <div class="mt-3">
+                    <h6><strong>Descripción:</strong></h6>
+                    <p class="text-muted">{{ producto.descripcion }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Información financiera -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-dollar-sign"></i> Información Financiera</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center p-3 border rounded">
+                            <h6 class="text-muted">Valor de Adquisición</h6>
+                            <h4 class="text-primary">${{ "%.2f"|format(producto.valor_adquisicion) if producto.valor_adquisicion else '0.00' }}</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3 border rounded">
+                            <h6 class="text-muted">Fecha de Adquisición</h6>
+                            <h4 class="text-info">{{ producto.fecha_adquisicion.strftime('%d/%m/%Y') if producto.fecha_adquisicion else 'No especificado' }}</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3 border rounded">
+                            <h6 class="text-muted">Vida Útil</h6>
+                            <h4 class="text-warning">{{ producto.vida_util_anos or '0' }} años</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Asignación actual -->
+        {% if producto.asignacion_actual %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user-check"></i> Asignación Actual</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Usuario:</strong> {{ producto.asignacion_actual.usuario.nombre }} {{ producto.asignacion_actual.usuario.apellido }}<br>
+                        <strong>Email:</strong> {{ producto.asignacion_actual.usuario.email }}<br>
+                        <strong>Fecha de Asignación:</strong> {{ producto.asignacion_actual.fecha_asignacion.strftime('%d/%m/%Y %H:%M') }}
+                    </div>
+                    <div class="col-md-6">
+                        {% if producto.asignacion_actual.observaciones %}
+                        <strong>Observaciones:</strong><br>
+                        <p class="text-muted">{{ producto.asignacion_actual.observaciones }}</p>
+                        {% endif %}
+                        {% if current_user.rol == 'admin' %}
+                        <a href="{{ url_for('inventario.desasignar_producto', id=producto.id) }}" 
+                           class="btn btn-outline-warning btn-sm"
+                           onclick="return confirm('¿Está seguro que desea desasignar este producto?')">
+                            <i class="fas fa-user-minus"></i> Desasignar
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Panel lateral -->
+    <div class="col-md-4">
+        <!-- Imagen del producto -->
+        {% if producto.imagen %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-image"></i> Imagen</h6>
+            </div>
+            <div class="card-body text-center">
+                <img src="{{ url_for('static', filename='uploads/productos/' + producto.imagen) }}" 
+                     class="img-fluid rounded" style="max-height: 300px;" alt="{{ producto.nombre }}">
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Acciones rápidas -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-bolt"></i> Acciones Rápidas</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('inventario.ver_historial', id=producto.id) }}" class="btn btn-outline-info">
+                        <i class="fas fa-history"></i> Ver Historial
+                    </a>
+                    {% if current_user.rol == 'admin' %}
+                    {# <a href="{{ url_for('inventario.generar_qr', id=producto.id) }}" class="btn btn-outline-secondary">Generar QR</a> #}
+                        <i class="fas fa-qrcode"></i> Generar QR
+                    </a>
+                    {# <a href="{{ url_for('inventario.imprimir_etiqueta', id=producto.id) }}" class="btn btn-outline-dark">#}
+                        <i class="fas fa-print"></i> Imprimir Etiqueta
+                    </a>
+                    {% if producto.estado != 'dado_de_baja' %}
+                    <a href="{{ url_for('inventario.crear_informe_baja', id=producto.id) }}" class="btn btn-outline-danger">
+                        <i class="fas fa-file-alt"></i> Crear Informe de Baja
+                    </a>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Estadísticas del producto -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-chart-bar"></i> Estadísticas</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h5 class="text-primary">{{ historial|length }}</h5>
+                            <small class="text-muted">Acciones en Historial</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h5 class="text-info">{{ asignaciones|length }}</h5>
+                        <small class="text-muted">Total Asignaciones</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Historial reciente -->
+{% if historial %}
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-history"></i> Historial Reciente (últimas 5 acciones)</h5>
+    </div>
+    <div class="card-body">
+        <div class="history-timeline">
+            {% for accion in historial[:5] %}
+            <div class="history-item">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <strong>{{ accion.accion }}</strong>
+                        <p class="text-muted mb-1">{{ accion.descripcion or 'Sin descripción' }}</p>
+                        <small class="text-muted">
+                            Por: {{ accion.usuario.nombre }} {{ accion.usuario.apellido }} - 
+                            {{ accion.fecha.strftime('%d/%m/%Y %H:%M') }}
+                        </small>
+                    </div>
+                    {% if accion.accion == 'CREACION' %}
+                        <span class="badge bg-success">Creación</span>
+                    {% elif accion.accion == 'MODIFICACION' %}
+                        <span class="badge bg-info">Modificación</span>
+                    {% elif accion.accion == 'ASIGNACION' %}
+                        <span class="badge bg-warning">Asignación</span>
+                    {% elif accion.accion == 'DESASIGNACION' %}
+                        <span class="badge bg-secondary">Desasignación</span>
+                    {% elif accion.accion == 'BAJA' %}
+                        <span class="badge bg-danger">Baja</span>
+                    {% else %}
+                        <span class="badge bg-primary">{{ accion.accion }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% if historial|length > 5 %}
+        <div class="text-center mt-3">
+            <a href="{{ url_for('inventario.ver_historial', id=producto.id) }}" class="btn btn-outline-primary">
+                Ver Historial Completo ({{ historial|length }} acciones)
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
