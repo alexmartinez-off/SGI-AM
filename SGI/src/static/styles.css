@@ -1,3 +1,17 @@
+/* body {
+
+  background-color: #212529;
+  /* Fondo oscuro por defecto *//*
+}
+
+.content-wrapper {
+  width: 100%;
+  overflow-y: auto;
+}
+
+.nav-link:hover {
+  background-color: #495057;
+} */
 .error {
   color: red;
   margin-bottom: 5px;
@@ -9,5 +23,5 @@ a {
 }
 
 .bg-custom-dark {
-    background-color: #0C0202 !important;
+  background-color: #0C0202 !important;
 }
