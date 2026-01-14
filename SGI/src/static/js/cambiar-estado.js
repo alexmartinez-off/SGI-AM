@@ -4,7 +4,7 @@
 
 // Función para manejar el cambio de estado
 function initCambioEstado() {
-    const nuevoEstadoSelect = document.getElementById('nuevo_estado');
+    const nuevoEstadoSelect = document.getElementById('estado_nuevo');
     
     if (nuevoEstadoSelect) {
         nuevoEstadoSelect.addEventListener('change', function() {
@@ -46,7 +46,7 @@ function initValidacionCambioEstado() {
     
     if (form) {
         form.addEventListener('submit', function(e) {
-            const nuevoEstado = document.getElementById('nuevo_estado');
+            const nuevoEstado = document.getElementById('estado_nuevo');
             
             if (nuevoEstado && nuevoEstado.value === 'dado_de_baja') {
                 const motivo = document.getElementById('motivo');
