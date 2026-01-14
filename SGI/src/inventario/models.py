@@ -30,6 +30,7 @@ class Inventario(db.Model):
     usuario_asignado_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     fecha_asignacion = db.Column(db.DateTime)
     cantidad = db.Column(db.Integer, default=1)
+    precio = db.Column(db.Numeric(10, 2), default=0)  # Precio del artículo
     ubicacion = db.Column(db.String(255))  # Ubicación física del producto
     # codigo_barras = db.Column(db.String(100), unique=True)  # Código de barras opcional
     # valor_adquisicion = db.Column(db.Numeric(10, 2))  # Valor de compra
@@ -80,7 +81,8 @@ class Historial(db.Model):
 class InformeBaja(db.Model):
     __tablename__ = 'informes_baja'
     id = db.Column(db.Integer, primary_key=True)
-    producto_id = db.Column(db.Integer, db.ForeignKey('inventario.id'), nullable=False)
+    # Hacer nullable para permitir conservar el informe cuando el producto sea eliminado
+    producto_id = db.Column(db.Integer, db.ForeignKey('inventario.id'), nullable=True)
     usuario_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     usuario = db.relationship('User', foreign_keys=[usuario_id])
     motivo = db.Column(db.String(100), nullable=False)  # 'deterioro', 'obsolescencia', 'perdida', 'robo', 'otro'
@@ -93,8 +95,10 @@ class InformeBaja(db.Model):
     estado_informe = db.Column(db.String(20), default='pendiente')  # 'pendiente', 'aprobado', 'rechazado'
     aprobado = db.Column(db.Boolean, default=False)  # True si el informe fue aprobado
     comentarios_aprobacion = db.Column(db.Text)
+    estado_previo = db.Column(db.String(50))
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Campos snapshot del producto al momento de la aprobación (para conservar historial)
     # Relaciones
     producto = db.relationship('Inventario', backref='informes_baja')
     usuario = db.relationship('User', foreign_keys=[usuario_id], backref='informes_baja_creados')
@@ -132,6 +136,9 @@ class Asignacion(db.Model):
     fecha_devolucion_esperada = db.Column(db.Date)
     motivo_asignacion = db.Column(db.Text)
     condiciones_uso = db.Column(db.Text)
+    empleado_nombre = db.Column(db.String(255))
+    empleado_telefono = db.Column(db.String(50))
+    observaciones = db.Column(db.Text)
     activa = db.Column(db.Boolean, default=True)
     fecha_devolucion_real = db.Column(db.DateTime)
 
