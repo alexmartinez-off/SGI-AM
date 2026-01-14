@@ -10,18 +10,10 @@ function confirmarEliminacion(nombre) {
 
 // Función para toggle de filtros
 function toggleFiltros() {
-    const filtrosContainer = document.getElementById('filtros-container');
-    const toggleBtn = document.querySelector('[data-bs-toggle="collapse"]');
-    
-    if (filtrosContainer) {
-        if (filtrosContainer.classList.contains('show')) {
-            filtrosContainer.classList.remove('show');
-            if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
-        } else {
-            filtrosContainer.classList.add('show');
-            if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
-        }
-    }
+    const filtrosSection = document.getElementById('filtros-seccion');
+    if (!filtrosSection) return;
+
+    filtrosSection.classList.toggle('d-none');
 }
 
 // Función para limpiar filtros
