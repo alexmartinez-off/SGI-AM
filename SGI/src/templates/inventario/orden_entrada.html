@@ -1,0 +1,91 @@
+{% extends "inventario/_inventario_base.html" %}
+
+{% block inventario_content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-xl-10">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="mb-0">
+          <i class="fas fa-file-signature"></i> Orden de Entrada
+        </h3>
+      </div>
+      <div class="card-body">
+        <form method="POST">
+          {{ form.hidden_tag() }}
+
+          <div class="row mb-3">
+            <div class="col-md-3">
+              {{ form.numero_orden.label(class="form-label") }}
+              {{ form.numero_orden(class="form-control") }}
+            </div>
+            <div class="col-md-3">
+              {{ form.fecha.label(class="form-label") }}
+              {{ form.fecha(class="form-control") }}
+            </div>
+            <div class="col-md-6">
+              {{ form.con_cargo_a.label(class="form-label") }}
+              {{ form.con_cargo_a(class="form-control", placeholder="Ingrese dependencia/área") }}
+            </div>
+          </div>
+
+          <div class="mb-3">
+            {{ form.senor.label(class="form-label") }}
+            {{ form.senor(class="form-control") }}
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-bordered align-middle">
+              <thead class="table-success">
+                <tr>
+                  <th style="width: 120px;">No. de Orden</th>
+                  <th>DETALLE</th>
+                  <th style="width: 220px;">Categoría</th>
+                  <th style="width: 140px;">CANTIDAD</th>
+                  <th style="width: 160px;">Vr. Unitario</th>
+                  <th style="width: 180px;">VALOR TOTAL</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in form.items %}
+                <tr>
+                  <td>{{ loop.index }}</td>
+                  <td>{{ item.detalle(class="form-control") }}</td>
+                  <td>{{ item.categoria_id(class="form-select") }}</td>
+                  <td>{{ item.cantidad(class="form-control") }}</td>
+                  <td>{{ item.precio_unitario(class="form-control") }}</td>
+                  <td>{{ item.valor_total(class="form-control") }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+        <div class="d-flex align-items-center gap-2 my-2">
+          <label class="form-label m-0">Filas:</label>
+          <input type="number" id="numFilas" min="4" max="50" value="{{ form.items|length }}" class="form-control" style="width: 90px;">
+          <button type="button" class="btn btn-outline-secondary" onclick="ajustarFilas()">Ajustar</button>
+        </div>
+
+          <div class="mt-4 d-flex justify-content-between">
+            <a href="{{ url_for('inventario.listar_productos') }}" class="btn btn-secondary">
+              <i class="fas fa-arrow-left"></i> Volver
+            </a>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i> Registrar Orden
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function ajustarFilas() {
+  const n = document.getElementById('numFilas').value;
+  const url = new URL(window.location.href);
+  url.searchParams.set('filas', n);
+  window.location.href = url.toString();
+}
+</script>
+{% endblock %}
