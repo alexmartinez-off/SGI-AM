@@ -5,23 +5,8 @@ from flask_login import UserMixin
 from src import db, bcrypt
 from config import Config
 from itsdangerous import URLSafeTimedSerializer
-from src import db, bcrypt
-from flask_login import UserMixin
-import pyotp
-from config import Config
-from itsdangerous import URLSafeTimedSerializer
 from flask import current_app
-from datetime import datetime
 
-# Modelo de Dependencia
-class Dependencia(db.Model):
-    __tablename__ = 'dependencias'
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-    descripcion = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    usuarios = db.relationship('User', back_populates='dependencia', lazy='dynamic')
 
 # Modelo de usuario para la autenticación y gestión de cuentas
 class User(UserMixin, db.Model):
@@ -37,10 +22,8 @@ class User(UserMixin, db.Model):
     is_two_factor_authentication_enabled = db.Column(db.Boolean, default=False)
     secret_token = db.Column(db.String(255), unique=True)
     rol = db.Column(db.String(50), default='usuario')
-    id_dependencia = db.Column(db.Integer, db.ForeignKey('dependencias.id'))
-    dependencia = db.relationship('Dependencia', back_populates='usuarios')
 
-    def __init__(self, nombre, apellido, username, email, telefono, password, rol='usuario', id_dependencia=None):
+    def __init__(self, nombre, apellido, username, email, telefono, password, rol='usuario'):
         self.nombre = nombre
         self.apellido = apellido
         self.username = username
@@ -49,7 +32,6 @@ class User(UserMixin, db.Model):
         self.password = bcrypt.generate_password_hash(password).decode('utf-8')
         self.secret_token = pyotp.random_base32()
         self.rol = rol
-        self.id_dependencia = id_dependencia
 
     def get_authentication_setup_uri(self):
         return pyotp.totp.TOTP(self.secret_token).provisioning_uri(
