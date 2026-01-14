@@ -1,0 +1,221 @@
+{% extends "inventario/_inventario_base.html" %}
+
+{% block inventario_content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">
+                    <i class="fas fa-user-plus"></i> Asignar Producto
+                </h3>
+            </div>
+            <div class="card-body">
+                <!-- Información del producto -->
+                <div class="alert alert-info mb-4">
+                    <h5><i class="fas fa-box"></i> Producto a Asignar</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Código:</strong> {{ producto.codigo_producto }}<br>
+                            <strong>Nombre:</strong> {{ producto.nombre }}<br>
+                            <strong>Categoría:</strong> {{ producto.categoria.nombre }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Marca:</strong> {{ producto.marca or 'No especificado' }}<br>
+                            <strong>Modelo:</strong> {{ producto.modelo or 'No especificado' }}<br>
+                            <strong>Estado:</strong> 
+                            <span class="badge bg-success">{{ producto.estado.title() }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ form.uuid_unidad.label(class="form-label") }}
+                        {{ form.uuid_unidad(class="form-select" + (" is-invalid" if form.uuid_unidad.errors else "")) }}
+                        {% if form.uuid_unidad.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.uuid_unidad.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Seleccione la unidad (UUID) a asignar</div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.usuario_asignado_id.label(class="form-label") }}
+                            {{ form.usuario_asignado_id(class="form-select" + (" is-invalid" if form.usuario_asignado_id.errors else "")) }}
+                            {% if form.usuario_asignado_id.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.usuario_asignado_id.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Usuario responsable de entregar el producto</div>
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.motivo_asignacion.label(class="form-label") }}
+                            {{ form.motivo_asignacion(class="form-control" + (" is-invalid" if form.motivo_asignacion.errors else "")) }}
+                            {% if form.motivo_asignacion.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.motivo_asignacion.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.fecha_devolucion_esperada.label(class="form-label") }}
+                            {{ form.fecha_devolucion_esperada(class="form-control" + (" is-invalid" if form.fecha_devolucion_esperada.errors else "")) }}
+                            {% if form.fecha_devolucion_esperada.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.fecha_devolucion_esperada.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Fecha estimada de retorno (opcional)</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.condiciones_uso.label(class="form-label") }}
+                        {{ form.condiciones_uso(class="form-control" + (" is-invalid" if form.condiciones_uso.errors else ""), rows="3") }}
+                        {% if form.condiciones_uso.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.condiciones_uso.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.empleado_nombre.label(class="form-label") }}
+                            {{ form.empleado_nombre(class="form-control" + (" is-invalid" if form.empleado_nombre.errors else "")) }}
+                            {% if form.empleado_nombre.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.empleado_nombre.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.empleado_telefono.label(class="form-label") }}
+                            {{ form.empleado_telefono(class="form-control" + (" is-invalid" if form.empleado_telefono.errors else "")) }}
+                            {% if form.empleado_telefono.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.empleado_telefono.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.observaciones.label(class="form-label") }}
+                        {{ form.observaciones(class="form-control" + (" is-invalid" if form.observaciones.errors else ""), rows="3") }}
+                        {% if form.observaciones.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.observaciones.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Contexto adicional sobre la entrega (opcional)</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('inventario.ver_producto', id=producto.id) }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-user-plus"></i> Asignar Producto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Historial de asignaciones previas -->
+        {% if asignaciones_previas %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Asignaciones Previas</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Usuario encargado</th>
+                                <th>Empleado receptor</th>
+                                <th>Fecha asignación</th>
+                                <th>Fecha devolución</th>
+                                <th>Duración</th>
+                                <th>Estado</th>
+                                <th>Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for asignacion in asignaciones_previas %}
+                            {% set fecha_asignacion = asignacion.fecha_asignacion %}
+                            {% set fecha_devolucion = asignacion.fecha_devolucion_real %}
+                            {% set dias = 0 %}
+                            {% if fecha_asignacion %}
+                                {% if fecha_devolucion %}
+                                    {% set dias = (fecha_devolucion - fecha_asignacion).days %}
+                                {% else %}
+                                    {% set dias = (ahora - fecha_asignacion).days %}
+                                {% endif %}
+                            {% endif %}
+                            {% set estado_label = 'Activa' if asignacion.activa else 'Finalizada' %}
+                            {% set estado_class = 'success' if asignacion.activa else 'secondary' %}
+                            <tr>
+                                <td>
+                                    {% if asignacion.usuario_asignado %}
+                                        {{ asignacion.usuario_asignado.nombre }} {{ asignacion.usuario_asignado.apellido }}<br>
+                                        <small class="text-muted">{{ asignacion.usuario_asignado.username }}</small>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ asignacion.empleado_nombre or '-' }}<br>
+                                    {% if asignacion.empleado_telefono %}
+                                        <small class="text-muted">{{ asignacion.empleado_telefono }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ fecha_asignacion.strftime('%d/%m/%Y') if fecha_asignacion else '-' }}</td>
+                                <td>
+                                    {% if fecha_devolucion %}
+                                        {{ fecha_devolucion.strftime('%d/%m/%Y') }}
+                                    {% else %}
+                                        <span class="text-warning">Pendiente</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ dias }} días
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ estado_class }}">{{ estado_label }}</span>
+                                </td>
+                                <td>{{ asignacion.observaciones or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
