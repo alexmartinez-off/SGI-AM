@@ -5,6 +5,9 @@
     <h1><i class="fas fa-boxes"></i> Inventario de Productos</h1>
     {% if current_user.rol == 'admin' %}
     <div class="action-buttons">
+        <a href="{{ url_for('inventario.crear_orden_entrada') }}" class="btn btn-success">
+            <i class="fas fa-file-signature"></i> Orden de Entrada
+        </a>
         <a href="{{ url_for('inventario.crear_producto') }}" class="btn btn-primary">
             <i class="fas fa-plus"></i> Nuevo Producto
         </a>
@@ -18,18 +21,15 @@
     {% endif %}
 </div>
 
-<!-- Sección de filtros -->
-<div id="filtros-seccion" class="filter-section d-none">
+<div id="filtros-seccion" class="filter-section d-none mb-4">
     <form method="GET" action="{{ url_for('inventario.listar_productos') }}" id="filtros-form">
         <div class="row">
             <div class="col-md-3">
-                <label for="categoria" class="form-label">Categoría</label>
-                <select name="categoria" id="categoria" class="form-select">
+                <label for="categoria_id" class="form-label">Categoría</label>
+                <select name="categoria_id" id="categoria_id" class="form-select">
                     <option value="">Todas las categorías</option>
                     {% for categoria in categorias %}
-                    <option value="{{ categoria.id }}" {% if request.args.get('categoria') == categoria.id|string %}selected{% endif %}>
-                        {{ categoria.nombre }}
-                    </option>
+                    <option value="{{ categoria.id }}" {% if request.args.get('categoria_id') == categoria.id|string %}selected{% endif %}>{{ categoria.nombre }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -37,17 +37,15 @@
                 <label for="estado" class="form-label">Estado</label>
                 <select name="estado" id="estado" class="form-select">
                     <option value="">Todos los estados</option>
-                    <option value="disponible" {% if request.args.get('estado') == 'disponible' %}selected{% endif %}>Disponible</option>
-                    <option value="asignado" {% if request.args.get('estado') == 'asignado' %}selected{% endif %}>Asignado</option>
-                    <option value="mantenimiento" {% if request.args.get('estado') == 'mantenimiento' %}selected{% endif %}>En Mantenimiento</option>
+                    <option value="en_bodega" {% if request.args.get('estado') == 'en_bodega' %}selected{% endif %}>En Bodega</option>
+                    <option value="en_uso" {% if request.args.get('estado') == 'en_uso' %}selected{% endif %}>En Uso</option>
+                    <option value="daniado" {% if request.args.get('estado') == 'daniado' %}selected{% endif %}>Dañado</option>
                     <option value="dado_de_baja" {% if request.args.get('estado') == 'dado_de_baja' %}selected{% endif %}>Dado de Baja</option>
                 </select>
             </div>
             <div class="col-md-3">
-                <label for="buscar" class="form-label">Buscar</label>
-                <input type="text" name="buscar" id="buscar" class="form-control" 
-                       placeholder="Buscar por nombre o código..." 
-                       value="{{ request.args.get('buscar', '') }}">
+                <label for="nombre" class="form-label">Buscar</label>
+                <input type="text" name="nombre" id="nombre" class="form-control" placeholder="Buscar por nombre..." value="{{ request.args.get('nombre', '') }}">
             </div>
             <div class="col-md-3 d-flex align-items-end">
                 <div class="btn-group w-100">
@@ -63,9 +61,8 @@
     </form>
 </div>
 
-<!-- Estadísticas rápidas -->
 <div class="row mb-4">
-    <div class="col-md-3 " >
+    <div class="col-md-3">
         <div class="bg-dark card info-card">
             <div class="card-body text-center">
                 <h5 class="card-title">Total Productos</h5>
@@ -99,75 +96,85 @@
     </div>
 </div>
 
-<!-- Tabla de productos -->
 <div class="card">
     <div class="card-header">
         <h5 class="mb-0">Lista de Productos</h5>
     </div>
     <div class="card-body">
-        {% if productos %}
+        {% if productos.items %}
         <div class="table-responsive">
             <table class="table table-striped table-hover">
                 <thead class="table-dark">
-            <tr>
-                <th>Código</th>
-                <th>Nombre</th>
-                <th>Categoría</th>
-                <th>Precio</th>
-                <th>Cantidad</th>
-                <th>Estado</th>
-                <th>Fecha Registro</th>
-                <th>Acciones</th>
+                    <tr>
+                        <th>UUID</th>
+                        <th>Nombre</th>
+                        <th>Categoría</th>
+                        <th>Precio</th>
+                        <th>Cantidad</th>
+                        <th>Estado</th>
+                        <th>Fecha Registro</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for producto in productos %}
+                    {% for producto in productos.items %}
                     <tr>
-                        <td><code>{{ producto.codigo_producto }}</code></td>
+                        <td><code>{{ producto.uuid }}</code></td>
                         <td>{{ producto.nombre }}</td>
                         <td>
-                            <span class="badge bg-secondary">{{ producto.categoria.nombre }}</span>
-                        </td>
-                        <td>
-                            ${{ '{:,.2f}'.format(producto.precio) if producto.precio is not none else '0.00' }}
-                        </td>
-                        <td>
-                            {{ producto.cantidad if producto.cantidad is not none else '0' }}
-                        </td>
-                        <td>
-                            {% if producto.estado == 'disponible' %}
-                                <span class="badge bg-success status-badge">Disponible</span>
-                            {% elif producto.estado == 'asignado' %}
-                                <span class="badge bg-warning status-badge">Asignado</span>
-                            {% elif producto.estado == 'mantenimiento' %}
-                                <span class="badge bg-info status-badge">En Mantenimiento</span>
-                            {% elif producto.estado == 'dado_de_baja' %}
-                                <span class="badge bg-danger status-badge">Dado de Baja</span>
+                            {% if producto.categoria %}
+                                <span class="badge bg-secondary">{{ producto.categoria.nombre }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Sin categoría</span>
                             {% endif %}
                         </td>
-                        <td>{{ producto.fecha_registro.strftime('%d/%m/%Y') }}</td>
+                        <td>${{ '{:,.2f}'.format(producto.precio|float) if producto.precio is not none else '0.00' }}</td>
+                        <td>{{ producto.cantidad if producto.cantidad is not none else '1' }}</td>
+                        <td>
+                            {% if producto.estado == 'en_bodega' %}
+                                <span class="badge bg-success status-badge">En Bodega</span>
+                            {% elif producto.estado == 'en_uso' %}
+                                <span class="badge bg-warning status-badge">En Uso</span>
+                            {% elif producto.estado == 'daniado' %}
+                                <span class="badge bg-info status-badge">Dañado</span>
+                            {% elif producto.estado == 'dado_de_baja' %}
+                                <span class="badge bg-danger status-badge">Dado de Baja</span>
+                            {% else %}
+                                <span class="badge bg-secondary status-badge">{{ producto.estado_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ producto.fecha_registro.strftime('%d/%m/%Y') if producto.fecha_registro else '' }}</td>
                         <td>
                             <div class="btn-group btn-group-sm">
-                                <a href="{{ url_for('inventario.ver_producto', id=producto.id) }}" 
-                                   class="btn btn-outline-info" title="Ver detalles">
+                                <a href="{{ url_for('inventario.ver_producto', id=producto.id) }}" class="btn btn-outline-info" title="Ver detalles">
                                     <i class="fas fa-eye"></i>
                                 </a>
                                 {% if current_user.rol == 'admin' %}
-                                <a href="{{ url_for('inventario.editar_producto', id=producto.id) }}" 
-                                   class="btn btn-outline-primary" title="Editar">
+                                {% if producto.estado != 'dado_de_baja' %}
+                                <a href="{{ url_for('inventario.editar_producto', id=producto.id) }}" class="btn btn-outline-primary" title="Editar">
                                     <i class="fas fa-edit"></i>
                                 </a>
+                                {% else %}
+                                <button type="button" class="btn btn-outline-secondary disabled" title="Producto dado de baja" aria-disabled="true">
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                                {% endif %}
                                 {% if producto.estado != 'dado_de_baja' %}
-                                <a href="{{ url_for('inventario.cambiar_estado_producto', id=producto.id) }}" 
-                                   class="btn btn-outline-warning" title="Cambiar estado">
+                                <a href="{{ url_for('inventario.cambiar_estado_producto', id=producto.id) }}" class="btn btn-outline-warning" title="Cambiar estado">
                                     <i class="fas fa-exchange-alt"></i>
                                 </a>
                                 {% endif %}
+                                {% endif %}
+                                {% if producto.estado != 'dado_de_baja' %}
                                 <form action="{{ url_for('inventario.eliminar_producto', id=producto.id) }}" method="post" style="display:inline;" onsubmit="return confirmarEliminacion('{{ producto.nombre }}')">
                                     <button type="submit" class="btn btn-outline-danger" title="Eliminar">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
+                                {% else %}
+                                <button type="button" class="btn btn-outline-danger disabled" title="Eliminar" aria-disabled="true">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                                 {% endif %}
                             </div>
                         </td>
@@ -176,50 +183,34 @@
                 </tbody>
             </table>
         </div>
-        
-        <!-- Paginación -->
+
         {% if productos.pages > 1 %}
         <nav aria-label="Paginación de productos">
             <ul class="pagination justify-content-center">
                 {% if productos.has_prev %}
                 <li class="page-item">
-                    <a class="page-link" href="{{ url_for('inventario.listar_productos', page=productos.prev_num, **request.args) }}">
-                        Anterior
-                    </a>
+                    <a class="page-link" href="{{ url_for('inventario.listar_productos') }}?page={{ productos.prev_num }}{% if qs %}&{{ qs }}{% endif %}">Anterior</a>
                 </li>
                 {% endif %}
-                
                 {% for page_num in productos.iter_pages() %}
                     {% if page_num %}
                         {% if page_num != productos.page %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ url_for('inventario.listar_productos', page=page_num, **request.args) }}">
-                                {{ page_num }}
-                            </a>
-                        </li>
+                        <li class="page-item"><a class="page-link" href="{{ url_for('inventario.listar_productos') }}?page={{ page_num }}{% if qs %}&{{ qs }}{% endif %}">{{ page_num }}</a></li>
                         {% else %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ page_num }}</span>
-                        </li>
+                        <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
                         {% endif %}
                     {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link">…</span>
-                    </li>
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
                     {% endif %}
                 {% endfor %}
-                
                 {% if productos.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="{{ url_for('inventario.listar_productos', page=productos.next_num, **request.args) }}">
-                        Siguiente
-                    </a>
+                    <a class="page-link" href="{{ url_for('inventario.listar_productos') }}?page={{ productos.next_num }}{% if qs %}&{{ qs }}{% endif %}">Siguiente</a>
                 </li>
                 {% endif %}
             </ul>
         </nav>
         {% endif %}
-        
         {% else %}
         <div class="text-center py-5">
             <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
