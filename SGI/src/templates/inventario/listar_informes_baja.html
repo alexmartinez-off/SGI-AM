@@ -26,14 +26,18 @@
                 <tbody>
                     {% for informe in informes_pendientes %}
                     <tr>
-                        <td>{{ informe.producto.uuid }}</td>
-                        <td>{{ informe.producto.nombre }}</td>
+                        <td>{{ informe.producto.uuid if informe.producto else 'UUID no disponible' }}</td>
+                        <td>{{ informe.producto.nombre if informe.producto else 'Producto eliminado' }}</td>
                         <td>{{ informe.motivo }}</td>
                         <td>{{ informe.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</td>
                         <td>{{ informe.usuario.nombre }} {{ informe.usuario.apellido }}</td>
                         <td><span class="badge bg-warning text-dark">Pendiente</span></td>
                         <td class="text-center">
                             <a href="{{ url_for('inventario.ver_informe_baja', id=informe.id) }}" class="btn btn-sm btn-primary">Revisar</a>
+                            {% if current_user.rol == 'admin' %}
+                            <a href="{{ url_for('inventario.aprobar_informe_baja', id=informe.id) }}" class="btn btn-sm btn-success" onclick="return confirm('¿Aprobar y eliminar la unidad del inventario?')">Aprobar</a>
+                            <a href="{{ url_for('inventario.rechazar_informe_baja', id=informe.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Rechazar informe?')">Rechazar</a>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -64,8 +68,8 @@
                 <tbody>
                     {% for informe in informes_aprobados %}
                     <tr>
-                        <td>{{ informe.producto.uuid }}</td>
-                        <td>{{ informe.producto.nombre }}</td>
+                        <td>{{ informe.producto.uuid if informe.producto else 'UUID no disponible' }}</td>
+                        <td>{{ informe.producto.nombre if informe.producto else 'Producto eliminado' }}</td>
                         <td>{{ informe.motivo }}</td>
                         <td>{{ informe.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</td>
                         <td>{{ informe.usuario.nombre }} {{ informe.usuario.apellido }}</td>
@@ -102,8 +106,8 @@
                 <tbody>
                     {% for informe in informes_rechazados %}
                     <tr>
-                        <td>{{ informe.producto.uuid }}</td>
-                        <td>{{ informe.producto.nombre }}</td>
+                        <td>{{ informe.producto.uuid if informe.producto else 'UUID no disponible' }}</td>
+                        <td>{{ informe.producto.nombre if informe.producto else 'Producto eliminado' }}</td>
                         <td>{{ informe.motivo }}</td>
                         <td>{{ informe.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</td>
                         <td>{{ informe.usuario.nombre }} {{ informe.usuario.apellido }}</td>
@@ -121,4 +125,6 @@
             <i class="fas fa-times-circle"></i> No hay informes de baja rechazados.
         </div>
         {% endif %}
+    </div>
+</div>
 {% endblock %}
