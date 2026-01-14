@@ -5,15 +5,21 @@
     <h1><i class="fas fa-box"></i> Detalles del Producto</h1>
     <div class="action-buttons">
         {% if current_user.rol == 'admin' %}
+        {% if producto.estado != 'dado_de_baja' %}
         <a href="{{ url_for('inventario.editar_producto', id=producto.id) }}" class="btn btn-primary">
             <i class="fas fa-edit"></i> Editar
         </a>
+        {% else %}
+        <button type="button" class="btn btn-secondary" disabled title="No se pueden editar productos dados de baja">
+            <i class="fas fa-ban"></i> Editado bloqueado
+        </button>
+        {% endif %}
         {% if producto.estado != 'dado_de_baja' %}
         <a href="{{ url_for('inventario.cambiar_estado_producto', id=producto.id) }}" class="btn btn-warning">
             <i class="fas fa-exchange-alt"></i> Cambiar Estado
         </a>
         {% endif %}
-        {% if producto.estado == 'disponible' %}
+    {% if producto.estado == 'en_bodega' %}
         <a href="{{ url_for('inventario.asignar_producto', id=producto.id) }}" class="btn btn-success">
             <i class="fas fa-user-plus"></i> Asignar
         </a>
@@ -37,8 +43,8 @@
                     <div class="col-md-6">
                         <table class="table table-borderless">
                             <tr>
-                                <th width="40%">Código:</th>
-                                <td><code>{{ producto.codigo_producto }}</code></td>
+                                <th width="40%">UUID:</th>
+                                <td><code>{{ producto.uuid }}</code></td>
                             </tr>
                             <tr>
                                 <th>Nombre:</th>
@@ -46,23 +52,25 @@
                             </tr>
                             <tr>
                                 <th>Categoría:</th>
-                                <td><span class="badge bg-secondary">{{ producto.categoria.nombre }}</span></td>
+                                <td><span class="badge bg-secondary">{{ producto.categoria.nombre if producto.categoria else 'Sin categoría' }}</span></td>
                             </tr>
                             <tr>
                                 <th>Precio:</th>
-                                <td>${{ '{:,.2f}'.format(producto.precio) if producto.precio is not none else '0.00' }}</td>
+                                <td>${{ ('{:,.2f}'.format(producto.precio|float)) if producto.precio is not none else '0.00' }}</td>
                             </tr>
                             <tr>
                                 <th>Estado:</th>
                                 <td>
-                                    {% if producto.estado == 'disponible' %}
-                                        <span class="badge bg-success">Disponible</span>
-                                    {% elif producto.estado == 'asignado' %}
-                                        <span class="badge bg-warning">Asignado</span>
-                                    {% elif producto.estado == 'mantenimiento' %}
-                                        <span class="badge bg-info">En Mantenimiento</span>
+                                    {% if producto.estado == 'en_bodega' %}
+                                        <span class="badge bg-success">En Bodega</span>
+                                    {% elif producto.estado == 'en_uso' %}
+                                        <span class="badge bg-warning">En Uso</span>
+                                    {% elif producto.estado == 'daniado' %}
+                                        <span class="badge bg-info">Dañado</span>
                                     {% elif producto.estado == 'dado_de_baja' %}
                                         <span class="badge bg-danger">Dado de Baja</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ producto.estado_display }}</span>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -78,30 +86,17 @@
                     </div>
                     <div class="col-md-6">
                         <table class="table table-borderless">
-                            <tr>
-                                <th width="40%">Número de Serie:</th>
-                                <td>{{ producto.numero_serie or 'No especificado' }}</td>
-                            </tr>
-                            <tr>
-                                <th>Código de Barras:</th>
-                                <td>{{ producto.codigo_barras or 'No especificado' }}</td>
-                            </tr>
+                            {# Campos no definidos en el modelo actual se omiten o se dejan como opcionales #}
                             <tr>
                                 <th>Ubicación:</th>
                                 <td>{{ producto.ubicacion or 'No especificado' }}</td>
                             </tr>
-                            <tr>
-                                <th>Proveedor:</th>
-                                <td>{{ producto.proveedor or 'No especificado' }}</td>
-                            </tr>
+                            
                             <tr>
                                 <th>Fecha de Registro:</th>
-                                <td>{{ producto.fecha_registro.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>{{ producto.fecha_registro.strftime('%d/%m/%Y %H:%M') if producto.fecha_registro else '' }}</td>
                             </tr>
-                            <tr>
-                                <th>Última Modificación:</th>
-                                <td>{{ producto.fecha_modificacion.strftime('%d/%m/%Y %H:%M') if producto.fecha_modificacion else 'No modificado' }}</td>
-                            </tr>
+                            
                         </table>
                     </div>
                 </div>
@@ -114,82 +109,79 @@
                 {% endif %}
             </div>
         </div>
-        
-        <!-- Información financiera -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-dollar-sign"></i> Información Financiera</h5>
+
+        {% set rechazos = producto.info_adicional.rechazos_informe if producto.info_adicional and producto.info_adicional.rechazos_informe else [] %}
+        {% if rechazos %}
+        <div class="card mb-4 border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Historial de rechazos</h6>
             </div>
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="text-center p-3 border rounded">
-                            <h6 class="text-muted">Valor de Adquisición</h6>
-                            <h4 class="text-primary">${{ "%.2f"|format(producto.valor_adquisicion) if producto.valor_adquisicion else '0.00' }}</h4>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-center p-3 border rounded">
-                            <h6 class="text-muted">Fecha de Adquisición</h6>
-                            <h4 class="text-info">{{ producto.fecha_adquisicion.strftime('%d/%m/%Y') if producto.fecha_adquisicion else 'No especificado' }}</h4>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="text-center p-3 border rounded">
-                            <h6 class="text-muted">Vida Útil</h6>
-                            <h4 class="text-warning">{{ producto.vida_util_anos or '0' }} años</h4>
-                        </div>
-                    </div>
-                </div>
+                <ul class="mb-0">
+                    {% for nota in rechazos %}
+                    <li>{{ nota }}</li>
+                    {% endfor %}
+                </ul>
             </div>
         </div>
+        {% endif %}
         
-        <!-- Asignación actual -->
-        {% if producto.asignacion_actual %}
+        {% if ultima_asignacion %}
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-user-check"></i> Asignación Actual</h5>
+                <h5 class="mb-0"><i class="fas fa-user-check"></i> Asignación actual</h5>
             </div>
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <strong>Usuario:</strong> {{ producto.asignacion_actual.usuario.nombre }} {{ producto.asignacion_actual.usuario.apellido }}<br>
-                        <strong>Email:</strong> {{ producto.asignacion_actual.usuario.email }}<br>
-                        <strong>Fecha de Asignación:</strong> {{ producto.asignacion_actual.fecha_asignacion.strftime('%d/%m/%Y %H:%M') }}
-                    </div>
-                    <div class="col-md-6">
-                        {% if producto.asignacion_actual.observaciones %}
-                        <strong>Observaciones:</strong><br>
-                        <p class="text-muted">{{ producto.asignacion_actual.observaciones }}</p>
-                        {% endif %}
-                        {% if current_user.rol == 'admin' %}
-                        <a href="{{ url_for('inventario.desasignar_producto', id=producto.id) }}" 
-                           class="btn btn-outline-warning btn-sm"
-                           onclick="return confirm('¿Está seguro que desea desasignar este producto?')">
-                            <i class="fas fa-user-minus"></i> Desasignar
-                        </a>
-                        {% endif %}
-                    </div>
+                <p class="mb-1">
+                    <strong>Usuario encargado:</strong>
+                    {% if ultima_asignacion.usuario_asignado %}
+                        {{ ultima_asignacion.usuario_asignado.nombre }} {{ ultima_asignacion.usuario_asignado.apellido }}
+                    {% else %}
+                        <span class="text-muted">Sin usuario registrado</span>
+                    {% endif %}
+                </p>
+                <p class="mb-1">
+                    <strong>Empleado receptor:</strong>
+                    {{ ultima_asignacion.empleado_nombre or 'No registrado' }}
+                    {% if ultima_asignacion.empleado_telefono %}
+                        <br><small class="text-muted">Tel: {{ ultima_asignacion.empleado_telefono }}</small>
+                    {% endif %}
+                </p>
+                <p class="mb-1">
+                    <strong>Fecha asignación:</strong>
+                    {{ ultima_asignacion.fecha_asignacion.strftime('%d/%m/%Y') if ultima_asignacion.fecha_asignacion else 'N/D' }}
+                </p>
+                <p class="mb-1">
+                    <strong>Fecha devolución esperada:</strong>
+                    {{ ultima_asignacion.fecha_devolucion_esperada.strftime('%d/%m/%Y') if ultima_asignacion.fecha_devolucion_esperada else 'No definida' }}
+                </p>
+                <p class="mb-1">
+                    <strong>Motivo:</strong> {{ ultima_asignacion.motivo_asignacion or 'Sin motivo registrado' }}
+                </p>
+                <p class="mb-1">
+                    <strong>Condiciones de uso:</strong>
+                    {{ ultima_asignacion.condiciones_uso or 'No definidas' }}
+                </p>
+                {% if ultima_asignacion.observaciones %}
+                <p class="mb-0">
+                    <strong>Observaciones:</strong> {{ ultima_asignacion.observaciones }}
+                </p>
+                {% endif %}
+                <div class="mt-2">
+                    <span class="badge bg-{{ 'success' if ultima_asignacion.activa else 'secondary' }}">
+                        {{ 'Activa' if ultima_asignacion.activa else 'Finalizada' }}
+                    </span>
                 </div>
             </div>
         </div>
         {% endif %}
+
     </div>
     
     <!-- Panel lateral -->
     <div class="col-md-4">
         <!-- Imagen del producto -->
-        {% if producto.imagen %}
-        <div class="card mb-4">
-            <div class="card-header">
-                <h6 class="mb-0"><i class="fas fa-image"></i> Imagen</h6>
-            </div>
-            <div class="card-body text-center">
-                <img src="{{ url_for('static', filename='uploads/productos/' + producto.imagen) }}" 
-                     class="img-fluid rounded" style="max-height: 300px;" alt="{{ producto.nombre }}">
-            </div>
-        </div>
-        {% endif %}
+    {# No hay imagen en el modelo actual #}
         
         <!-- Acciones rápidas -->
         <div class="card mb-4">
@@ -202,12 +194,6 @@
                         <i class="fas fa-history"></i> Ver Historial
                     </a>
                     {% if current_user.rol == 'admin' %}
-                    {# <a href="{{ url_for('inventario.generar_qr', id=producto.id) }}" class="btn btn-outline-secondary">Generar QR</a> #}
-                        <i class="fas fa-qrcode"></i> Generar QR
-                    </a>
-                    {# <a href="{{ url_for('inventario.imprimir_etiqueta', id=producto.id) }}" class="btn btn-outline-dark">#}
-                        <i class="fas fa-print"></i> Imprimir Etiqueta
-                    </a>
                     {% if producto.estado != 'dado_de_baja' %}
                     <a href="{{ url_for('inventario.crear_informe_baja', id=producto.id) }}" class="btn btn-outline-danger">
                         <i class="fas fa-file-alt"></i> Crear Informe de Baja
