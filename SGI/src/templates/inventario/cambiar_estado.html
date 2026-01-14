@@ -1,0 +1,140 @@
+{% extends "inventario/_inventario_base.html" %}
+
+{% block inventario_content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">
+                    <i class="fas fa-exchange-alt"></i> Cambiar Estado del Producto
+                </h3>
+            </div>
+            <div class="card-body">
+                <!-- Información del producto -->
+                <div class="alert alert-info mb-4">
+                    <h5><i class="fas fa-box"></i> Información del Producto</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Código:</strong> {{ producto.codigo_producto }}<br>
+                            <strong>Nombre:</strong> {{ producto.nombre }}<br>
+                            <strong>Categoría:</strong> {{ producto.categoria.nombre }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Estado Actual:</strong> 
+                            {% if producto.estado == 'en_bodega' %}
+                                <span class="badge bg-success">En Bodega</span>
+                            {% elif producto.estado == 'en_uso' %}
+                                <span class="badge bg-warning text-dark">En Uso</span>
+                            {% elif producto.estado == 'daniado' %}
+                                <span class="badge bg-info text-dark">Dañado</span>
+                            {% elif producto.estado == 'dado_de_baja' %}
+                                <span class="badge bg-danger">Dado de Baja</span>
+                            {% endif %}<br>
+                            {% if producto.asignacion_actual %}
+                            <strong>Asignado a:</strong> {{ producto.asignacion_actual.usuario.nombre }} {{ producto.asignacion_actual.usuario.apellido }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.estado_nuevo.label(class="form-label") }}
+                        {{ form.estado_nuevo(id="estado_nuevo", class="form-select" + (" is-invalid" if form.estado_nuevo.errors else "")) }}
+                        {% if form.estado_nuevo.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.estado_nuevo.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Seleccione el nuevo estado para el producto</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.descripcion.label(class="form-label") }}
+                        {{ form.descripcion(class="form-control" + (" is-invalid" if form.descripcion.errors else ""), rows="3") }}
+                        {% if form.descripcion.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.descripcion.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <div class="form-text">Explique el motivo del cambio de estado</div>
+                    </div>
+                    
+                    <!-- Alerta para cambio a mantenimiento -->
+                    <div class="alert alert-warning d-none" id="alertMantenimiento">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Atención:</strong> Al cambiar el producto a "En Mantenimiento", 
+                        {% if producto.asignacion_actual %}
+                        se desasignará automáticamente del usuario {{ producto.asignacion_actual.usuario.nombre }} {{ producto.asignacion_actual.usuario.apellido }}.
+                        {% else %}
+                        el producto no estará disponible para asignaciones.
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Alerta para dar de baja -->
+                    <div class="alert alert-danger d-none" id="alertBaja">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <strong>Cuidado:</strong> Al dar de baja el producto:
+                        <ul class="mb-0 mt-2">
+                            <li>{% if producto.asignacion_actual %}Se desasignará automáticamente del usuario actual{% endif %}</li>
+                            <li>No estará disponible para futuras asignaciones</li>
+                            <li>Se requerirá documentación adicional</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Campos adicionales para dar de baja -->
+                    <div class="d-none" id="camposBaja">
+                        <div class="card bg-dark border-secondary text-white mb-3">
+                            <div class="card-header bg-secondary">
+                                <h6 class="mb-0"><i class="fas fa-file-alt"></i> Información Adicional para Baja</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    {{ form.documento_baja.label(class="form-label text-white") }}
+                                    {{ form.documento_baja(class="form-control" + (" is-invalid" if form.documento_baja.errors else "")) }}
+                                    {% if form.documento_baja.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.documento_baja.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <div class="form-text text-light">Suba un documento que respalde la baja del producto (PDF, DOC, JPG, PNG)</div>
+                                </div>
+                                <div class="mb-3">
+                                    {{ form.observaciones_baja.label(class="form-label text-white") }}
+                                    {{ form.observaciones_baja(class="form-control" + (" is-invalid" if form.observaciones_baja.errors else ""), rows="3", placeholder="Detalles adicionales sobre la baja del producto...") }}
+                                    {% if form.observaciones_baja.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.observaciones_baja.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('inventario.ver_producto', id=producto.id) }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="btnCambiarEstado">
+                            <i class="fas fa-exchange-alt"></i> Cambiar Estado
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/cambiar-estado.js') }}"></script>
+{% endblock %}
