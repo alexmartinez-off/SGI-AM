@@ -1,0 +1,49 @@
+{% extends "inventario/_inventario_base.html" %}
+
+{% block inventario_content %}
+<div class="card mt-4">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">Detalle del Informe de Baja</h3>
+            {% if current_user.rol == 'admin' and informe.estado_informe == 'pendiente' %}
+            <div class="btn-group">
+                <a href="{{ url_for('inventario.aprobar_informe_baja', id=informe.id) }}" class="btn btn-success btn-sm" onclick="return confirm('¿Aprobar y eliminar la unidad del inventario?')">Aprobar</a>
+                <a href="{{ url_for('inventario.rechazar_informe_baja', id=informe.id) }}" class="btn btn-danger btn-sm" onclick="return confirm('¿Rechazar informe?')">Rechazar</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        <p><strong>Producto:</strong>
+            {% if producto %}
+                {{ producto.nombre }} <small class="text-muted">(UUID: {{ producto.uuid }})</small>
+            {% else %}
+                Producto eliminado
+            {% endif %}
+        </p>
+        <p><strong>Motivo:</strong> {{ informe.motivo }}</p>
+        <p><strong>Descripción:</strong> {{ informe.descripcion_detallada }}</p>
+        <p><strong>Fecha de baja:</strong> {{ informe.fecha_baja.strftime('%d/%m/%Y') if informe.fecha_baja else '' }}</p>
+        <p><strong>Valor residual:</strong> {{ (informe.valor_residual|float)|round(2) if informe.valor_residual is not none else 'N/A' }}</p>
+    <p><strong>Estado:</strong> {{ informe.estado_informe }}{% if informe.estado_informe == 'aprobado' and not producto %} <span class="badge bg-danger ms-2">Unidad eliminada</span>{% endif %}</p>
+        <p><strong>Solicitante:</strong> {{ informe.usuario.nombre }} {{ informe.usuario.apellido }}</p>
+        {% if informe.aprobado_por %}
+        <p><strong>Aprobado por:</strong> {{ informe.aprobador.nombre }} {{ informe.aprobador.apellido }}</p>
+        {% endif %}
+        {% if informe.comentarios_aprobacion %}
+        <p><strong>Comentarios de aprobación:</strong> {{ informe.comentarios_aprobacion }}</p>
+        {% endif %}
+        {% if informe.documento_adjunto %}
+        <p><strong>Documento adjunto:</strong>
+            <a href="{{ url_for('static', filename='uploads/informes_baja/' ~ informe.documento_adjunto) }}" target="_blank">Ver documento</a>
+        </p>
+        {% endif %}
+    </div>
+</div>
+<div class="mt-3">
+    <a href="{{ url_for('inventario.listar_informes_baja') }}" class="btn btn-secondary">Volver a Informes</a>
+    {% if producto %}
+    <a href="{{ url_for('inventario.ver_producto', id=producto.id) }}" class="btn btn-outline-primary">Ver Unidad</a>
+    {% endif %}
+</div>
+{% endblock %}
