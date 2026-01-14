@@ -7,8 +7,10 @@
 {% block css %}
 <style>
     .info-card {
-        border-left: 4px solid #007bff;
-        background: #f8f9fa;
+        border-left: 4px solid var(--link-color);
+        background: var(--surface-secondary);
+        border-radius: 1rem;
+        box-shadow: var(--shadow-color);
     }
     .status-badge {
         font-size: 0.9em;
@@ -22,10 +24,11 @@
         font-size: 0.875rem;
     }
     .filter-section {
-        background: #f8f9fa;
-        border-radius: 0.5rem;
+        background: var(--surface-secondary);
+        border-radius: 0.75rem;
         padding: 1rem;
         margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
     }
     .action-buttons {
         display: flex;
@@ -38,7 +41,7 @@
         object-fit: cover;
     }
     .history-timeline {
-        border-left: 2px solid #dee2e6;
+        border-left: 2px solid var(--border-color);
         padding-left: 1rem;
     }
     .history-item {
@@ -52,7 +55,7 @@
         top: 0.5rem;
         width: 10px;
         height: 10px;
-        background: #007bff;
+        background: var(--link-color);
         border-radius: 50%;
     }
 </style>
