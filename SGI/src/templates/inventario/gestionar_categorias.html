@@ -1,0 +1,214 @@
+{% extends "inventario/_inventario_base.html" %}
+
+{% block inventario_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-tags"></i> Gestión de Categorías</h1>
+    <div class="action-buttons">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCategoria">
+            <i class="fas fa-plus"></i> Nueva Categoría
+        </button>
+        <a href="{{ url_for('inventario.listar_categorias') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al Inventario
+        </a>
+    </div>
+</div>
+
+<!-- Estadísticas de categorías -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card info-card">
+            <div class="card-body text-center">
+                <h5 class="card-title">Total Categorías</h5>
+                <h3 class="text-primary">{{ categorias|length }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card info-card">
+            <div class="card-body text-center">
+                <h5 class="card-title">Activas</h5>
+                <h3 class="text-success">{{ categorias|selectattr('activa')|list|length }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card info-card">
+            <div class="card-body text-center">
+                <h5 class="card-title">Inactivas</h5>
+                <h3 class="text-warning">{{ categorias|rejectattr('activa')|list|length }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card info-card">
+            <div class="card-body text-center">
+                <h5 class="card-title">Productos Totales</h5>
+                <h3 class="text-info">{{ total_productos }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de categorías -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Lista de Categorías</h5>
+    </div>
+    <div class="card-body">
+        {% if categorias %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Estado</th>
+                        <th>Productos</th>
+                        <th>Fecha Creación</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for categoria in categorias %}
+                    <tr>
+                        <td><strong>{{ categoria.nombre }}</strong></td>
+                        <td>{{ categoria.descripcion or 'Sin descripción' }}</td>
+                        <td>
+                            {% if categoria.activa %}
+                                <span class="badge bg-success">Activa</span>
+                            {% else %}
+                                <span class="badge bg-warning">Inactiva</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">{{ categoria.productos|length }}</span>
+                        </td>
+                        <td>{{ categoria.fecha_creacion.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-primary btn-edit-categoria"
+                                        data-id="{{ categoria.id }}"
+                                        data-nombre="{{ categoria.nombre|tojson|safe }}"
+                                        data-descripcion="{{ categoria.descripcion|default('')|tojson|safe }}"
+                                        data-activa="{{ categoria.activa|string|lower }}"
+                                        title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                {% if categoria.activa %}
+                                <button type="button" class="btn btn-outline-warning btn-change-status"
+                                        data-id="{{ categoria.id }}"
+                                        data-nuevo-estado="false"
+                                        title="Desactivar">
+                                    <i class="fas fa-eye-slash"></i>
+                                </button>
+                                {% else %}
+                                <button type="button" class="btn btn-outline-success btn-change-status"
+                                        data-id="{{ categoria.id }}"
+                                        data-nuevo-estado="true"
+                                        title="Activar">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                {% endif %}
+                                {% if categoria.productos|length == 0 %}
+                                <button type="button" class="btn btn-outline-danger btn-delete-categoria"
+                                        data-id="{{ categoria.id }}"
+                                        data-nombre="{{ categoria.nombre|tojson|safe }}"
+                                        title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% else %}
+                                <button type="button" class="btn btn-outline-secondary"
+                                        disabled title="No se puede eliminar, tiene productos asociados">
+                                    <i class="fas fa-lock"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-tags fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No hay categorías registradas</h5>
+            <p class="text-muted">Comience creando su primera categoría.</p>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCategoria">
+                <i class="fas fa-plus"></i> Crear Primera Categoría
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para crear/editar categoría -->
+<div class="modal fade" id="modalCategoria" tabindex="-1" aria-labelledby="modalCategoriaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCategoriaLabel">Nueva Categoría</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form id="formCategoria" method="POST" action="{{ url_for('inventario.listar_categorias') }}">
+                <div class="modal-body">
+                    <input type="hidden" name="categoria_id" id="categoria_id">
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre de la Categoría</label>
+                        <input type="text" class="form-control" name="nombre" id="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="descripcion" class="form-label">Descripción</label>
+                        <textarea class="form-control" name="descripcion" id="descripcion" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" name="activa" id="activa" checked>
+                            <label class="form-check-label" for="activa">
+                                Categoría activa
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnGuardarCategoria">
+                        <i class="fas fa-save"></i> Guardar Categoría
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación para eliminar -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-labelledby="modalEliminarLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEliminarLabel">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro que desea eliminar la categoría <strong id="nombreCategoriaEliminar"></strong>?</p>
+                <p class="text-danger"><small>Esta acción no se puede deshacer.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="POST" action="{{ url_for('inventario.eliminar_categoria') }}" style="display: inline;">
+                    <input type="hidden" name="categoria_id" id="categoriaIdEliminar">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/gestionar-categorias.js') }}"></script>
+<script>
+window.cambiarEstadoCategoriaUrl = "{{ url_for('inventario.cambiar_estado_categoria') }}";
+</script>
+<script src="{{ url_for('static', filename='js/gestionar-categorias-init.js') }}"></script>
+{% endblock %}
