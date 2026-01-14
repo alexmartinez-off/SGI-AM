@@ -1,0 +1,271 @@
+{% extends "inventario/_inventario_base.html" %}
+
+{% block inventario_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-history"></i> Historial del Producto</h1>
+    <a href="{{ url_for('inventario.ver_producto', id=producto.id) }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Volver al Producto
+    </a>
+</div>
+
+<!-- Información del producto -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <h5 class="card-title">{{ producto.nombre }}</h5>
+                <p class="card-text">
+                    <strong>Código:</strong> {{ producto.codigo_producto }} | 
+                    <strong>Categoría:</strong> {{ producto.categoria.nombre }} | 
+                    <strong>Estado Actual:</strong> 
+                    {% if producto.estado == 'disponible' %}
+                        <span class="badge bg-success">Disponible</span>
+                    {% elif producto.estado == 'asignado' %}
+                        <span class="badge bg-warning">Asignado</span>
+                    {% elif producto.estado == 'mantenimiento' %}
+                        <span class="badge bg-info">En Mantenimiento</span>
+                    {% elif producto.estado == 'dado_de_baja' %}
+                        <span class="badge bg-danger">Dado de Baja</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                <strong>Total de Acciones:</strong> {{ historial.total }}<br>
+                <strong>Fecha de Registro:</strong> {{ producto.fecha_registro.strftime('%d/%m/%Y') }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="card mb-4">
+    <div class="card-header">
+        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" 
+                data-bs-target="#filtrosHistorial" aria-expanded="false" aria-controls="filtrosHistorial">
+            <i class="fas fa-filter"></i> Filtros de Historial
+        </button>
+    </div>
+    <div class="collapse" id="filtrosHistorial">
+        <div class="card-body">
+            <form method="GET" class="row">
+                <div class="col-md-3">
+                    <label for="accion" class="form-label">Tipo de Acción</label>
+                    <select name="accion" id="accion" class="form-select">
+                        <option value="">Todas las acciones</option>
+                        <option value="CREACION" {% if request.args.get('accion') == 'CREACION' %}selected{% endif %}>Creación</option>
+                        <option value="MODIFICACION" {% if request.args.get('accion') == 'MODIFICACION' %}selected{% endif %}>Modificación</option>
+                        <option value="ASIGNACION" {% if request.args.get('accion') == 'ASIGNACION' %}selected{% endif %}>Asignación</option>
+                        <option value="DESASIGNACION" {% if request.args.get('accion') == 'DESASIGNACION' %}selected{% endif %}>Desasignación</option>
+                        <option value="CAMBIO_ESTADO" {% if request.args.get('accion') == 'CAMBIO_ESTADO' %}selected{% endif %}>Cambio de Estado</option>
+                        <option value="BAJA" {% if request.args.get('accion') == 'BAJA' %}selected{% endif %}>Baja</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="usuario" class="form-label">Usuario</label>
+                    <select name="usuario" id="usuario" class="form-select">
+                        <option value="">Todos los usuarios</option>
+                        {% for usuario_h in usuarios_historial %}
+                        <option value="{{ usuario_h.id }}" {% if request.args.get('usuario') == usuario_h.id|string %}selected{% endif %}>
+                            {{ usuario_h.nombre }} {{ usuario_h.apellido }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="fecha_desde" class="form-label">Desde</label>
+                    <input type="date" name="fecha_desde" id="fecha_desde" class="form-control" 
+                           value="{{ request.args.get('fecha_desde', '') }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="fecha_hasta" class="form-label">Hasta</label>
+                    <input type="date" name="fecha_hasta" id="fecha_hasta" class="form-control" 
+                           value="{{ request.args.get('fecha_hasta', '') }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <div class="btn-group w-100">
+                        <button type="submit" class="btn btn-primary">Filtrar</button>
+                        <a href="{{ url_for('inventario.ver_historial', id=producto.id) }}" class="btn btn-outline-secondary">Limpiar</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Timeline del historial -->
+{% if historial %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-clock"></i> Línea de Tiempo
+            <span class="badge bg-primary ms-2">{{ historial.total }} acciones</span>
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="history-timeline">
+            {% for accion in historial %}
+            <div class="history-item mb-4">
+                <div class="row">
+                    <div class="col-md-9">
+                        <div class="d-flex align-items-start">
+                            <div class="me-3">
+                                {% if accion.accion == 'CREACION' %}
+                                    <span class="badge bg-success">Creación</span>
+                                {% elif accion.accion == 'MODIFICACION' %}
+                                    <span class="badge bg-info">Modificación</span>
+                                {% elif accion.accion == 'ASIGNACION' %}
+                                    <span class="badge bg-warning">Asignación</span>
+                                {% elif accion.accion == 'DESASIGNACION' %}
+                                    <span class="badge bg-secondary">Desasignación</span>
+                                {% elif accion.accion == 'CAMBIO_ESTADO' %}
+                                    <span class="badge bg-primary">Cambio Estado</span>
+                                {% elif accion.accion == 'BAJA' %}
+                                    <span class="badge bg-danger">Baja</span>
+                                {% else %}
+                                    <span class="badge bg-dark">{{ accion.accion }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ accion.descripcion or 'Sin descripción' }}</h6>
+                                <div class="text-muted small mb-2">
+                                    <i class="fas fa-user"></i> {{ accion.usuario.nombre }} {{ accion.usuario.apellido }}
+                                    <i class="fas fa-clock ms-2"></i> {{ accion.fecha.strftime('%d/%m/%Y %H:%M:%S') }}
+                                </div>
+                                {% if accion.detalles_adicionales %}
+                                <div class="mt-2">
+                                    <button class="btn btn-outline-info btn-sm" type="button" 
+                                            data-bs-toggle="collapse" data-bs-target="#detalles{{ accion.id }}" 
+                                            aria-expanded="false">
+                                        <i class="fas fa-info-circle"></i> Ver Detalles
+                                    </button>
+                                    <div class="collapse mt-2" id="detalles{{ accion.id }}">
+                                        <div class="card card-body bg-light">
+                                            <pre class="mb-0 small">{{ accion.detalles_adicionales }}</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-end">
+                        {% if accion.accion == 'CREACION' %}
+                            <i class="fas fa-plus-circle fa-2x text-success"></i>
+                        {% elif accion.accion == 'MODIFICACION' %}
+                            <i class="fas fa-edit fa-2x text-info"></i>
+                        {% elif accion.accion == 'ASIGNACION' %}
+                            <i class="fas fa-user-plus fa-2x text-warning"></i>
+                        {% elif accion.accion == 'DESASIGNACION' %}
+                            <i class="fas fa-user-minus fa-2x text-secondary"></i>
+                        {% elif accion.accion == 'CAMBIO_ESTADO' %}
+                            <i class="fas fa-exchange-alt fa-2x text-primary"></i>
+                        {% elif accion.accion == 'BAJA' %}
+                            <i class="fas fa-times-circle fa-2x text-danger"></i>
+                        {% else %}
+                            <i class="fas fa-cog fa-2x text-dark"></i>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if not loop.last %}
+                <hr class="my-3">
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Paginación -->
+{% if historial.pages > 1 %}
+<nav aria-label="Paginación del historial" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if historial.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('inventario.ver_historial', id=producto.id, page=historial.prev_num, **request.args) }}">
+                Anterior
+            </a>
+        </li>
+        {% endif %}
+        
+        {% for page_num in historial.iter_pages() %}
+            {% if page_num %}
+                {% if page_num != historial.page %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('inventario.ver_historial', id=producto.id, page=page_num, **request.args) }}">
+                        {{ page_num }}
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item active">
+                    <span class="page-link">{{ page_num }}</span>
+                </li>
+                {% endif %}
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">…</span>
+            </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if historial.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('inventario.ver_historial', id=producto.id, page=historial.next_num, **request.args) }}">
+                Siguiente
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-history fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">No hay historial disponible</h5>
+        <p class="text-muted">No se encontraron acciones registradas para este producto con los filtros aplicados.</p>
+        {% if request.args %}
+        <a href="{{ url_for('inventario.ver_historial', id=producto.id) }}" class="btn btn-outline-primary">
+            <i class="fas fa-undo"></i> Limpiar Filtros
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Estadísticas del historial -->
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card info-card">
+            <div class="card-body text-center">
+                <h6 class="card-title">Total Acciones</h6>
+                <h4 class="text-primary">{{ estadisticas_historial.total }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card info-card">
+            <div class="card-body text-center">
+                <h6 class="card-title">Asignaciones</h6>
+                <h4 class="text-warning">{{ estadisticas_historial.asignaciones }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card info-card">
+            <div class="card-body text-center">
+                <h6 class="card-title">Modificaciones</h6>
+                <h4 class="text-info">{{ estadisticas_historial.modificaciones }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card info-card">
+            <div class="card-body text-center">
+                <h6 class="card-title">Usuarios Únicos</h6>
+                <h4 class="text-success">{{ estadisticas_historial.usuarios_unicos }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
