@@ -113,30 +113,13 @@ const SidebarManager = {
 // Funcionalidades del modo oscuro
 const ThemeManager = {
     init: function() {
-        const darkModeSwitch = document.getElementById('darkModeSwitch');
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        
-        if (darkModeSwitch) {
-            // Aplicar tema guardado
-            this.applyTheme(savedTheme);
-            darkModeSwitch.checked = savedTheme === 'dark';
-            
-            // Escuchar cambios
-            darkModeSwitch.addEventListener('change', (e) => {
-                const theme = e.target.checked ? 'dark' : 'light';
-                this.applyTheme(theme);
-                localStorage.setItem('theme', theme);
-            });
-        }
+        // Forzar tema oscuro permanente
+        this.applyTheme();
     },
 
-    applyTheme: function(theme) {
+    applyTheme: function() {
         const html = document.documentElement;
-        if (theme === 'dark') {
-            html.setAttribute('data-bs-theme', 'dark');
-        } else {
-            html.removeAttribute('data-bs-theme');
-        }
+        html.setAttribute('data-bs-theme', 'dark');
     }
 };
 
